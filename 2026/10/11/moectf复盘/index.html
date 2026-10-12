@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>moectf复盘 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="moectf复盘查分系统 按 F12 打开开发者工具 使用 Ctrl + U 打开源码 在源码中使用 Ctrl + F 直接搜索 moectf，直接找到了 flag   💡 Web 知识点：F12 是渗透测试的第一步，主要看 Elements（元素）、Console（控制台）和 Network（网络）。Ctrl+U 查看页面源代码往往能发现被隐藏的注释或接口。Ctrl+F 搜索敏感关键字（如 f">
+<meta property="og:type" content="article">
+<meta property="og:title" content="moectf复盘">
+<meta property="og:url" content="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="moectf复盘查分系统 按 F12 打开开发者工具 使用 Ctrl + U 打开源码 在源码中使用 Ctrl + F 直接搜索 moectf，直接找到了 flag   💡 Web 知识点：F12 是渗透测试的第一步，主要看 Elements（元素）、Console（控制台）和 Network（网络）。Ctrl+U 查看页面源代码往往能发现被隐藏的注释或接口。Ctrl+F 搜索敏感关键字（如 f">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-11T11:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-11T14:39:59.209Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web安全">
+<meta property="article:tag" content="复盘">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-moectf复盘" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" class="article-date">
+  <time class="dt-published" datetime="2026-10-11T11:30:00.000Z" itemprop="datePublished">2026-10-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      moectf复盘
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="moectf复盘"><a href="#moectf复盘" class="headerlink" title="moectf复盘"></a>moectf复盘</h1><h2 id="查分系统"><a href="#查分系统" class="headerlink" title="查分系统"></a><strong>查分系统</strong></h2><ul>
+<li>按 <code>F12</code> 打开开发者工具</li>
+<li>使用 <code>Ctrl + U</code> 打开源码</li>
+<li>在源码中使用 <code>Ctrl + F</code> 直接搜索 <code>moectf</code>，直接找到了 flag</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：<code>F12</code> 是渗透测试的第一步，主要看 Elements（元素）、Console（控制台）和 Network（网络）。<code>Ctrl+U</code> 查看页面源代码往往能发现被隐藏的注释或接口。<code>Ctrl+F</code> 搜索敏感关键字（如 flag、admin、api）是非常高效的找线索方法。</p>
+</blockquote>
+<h2 id="归途"><a href="#归途" class="headerlink" title="归途"></a><strong>归途</strong></h2><ul>
+<li><strong>收集信息</strong></li>
+<li><code>key1</code>：控制台留下的打印信息（Console 中的 console.log）</li>
+<li><code>key2</code>：藏在 HTML 源码里面</li>
+<li><code>key3</code>：看网络请求的响应（Network 面板中的 Response）</li>
+<li><code>key4</code>：主动写一个请求，直接修改 URL</li>
+<li><code>key5</code>：藏在新的请求的标头里面（Request Headers）</li>
+<li><code>key6</code>：换成 POST 的请求方式</li>
+<li><code>key7</code>：修改 URL，尝试登录，伪造 admin 的 cookie</li>
+<li>最后获得提示，去到爬虫协议（Robots 协议）里面找</li>
+<li>进入提交界面</li>
+<li>进行 Base64 解码</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：</p>
+<ol>
+<li><strong>HTTP 方法</strong>：GET（查）和 POST（改&#x2F;交）。修改请求方法可以通过 Burp Suite 或者浏览器 F12 的“编辑并重发”来实现。</li>
+<li><strong>Cookie 伪造</strong>：服务端通常通过 Cookie 中的 session 或身份标识来判断权限，修改 Cookie 可以越权。</li>
+<li><strong>Robots 协议</strong>：网站根目录下的 <code>robots.txt</code> 是告诉爬虫哪些目录可以爬、哪些不可以。虽然只是“君子协定”，但在 CTF 中常常作为隐藏路径的提示。</li>
+<li><strong>Base64 编码</strong>：常用于前后端数据传输时的编码混淆，不是加密，可以直接解码。</li>
+</ol>
+</blockquote>
+<h2 id="查分系统-revenge"><a href="#查分系统-revenge" class="headerlink" title="查分系统-revenge"></a><strong>查分系统-revenge</strong></h2><ul>
+<li>先查看源码，发现了 Base64 编码的 iv</li>
+<li>解码后为 <code>moectf2026iv</code></li>
+<li>确定了加密的算法是 AES-GCM</li>
+<li>秘钥是学号</li>
+<li>之后尝试去爆破</li>
+<li>写了一个 Python 代码（AI 制作）</li>
+<li>成功爆破</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：</p>
+<ol>
+<li><strong>AES-GCM</strong>：一种对称加密算法。通常需要两个关键参数：<code>Key</code>（密钥）和 <code>IV</code>（初始化向量）。如果开发者在源码中泄露了 <code>IV</code>，且 <code>Key</code> 是弱口令（如学号），极容易遭受<strong>暴力破解</strong>。</li>
+<li><strong>爆破攻击</strong>：对于有限的密钥空间（例如学号范围），自动化脚本跑字典是最快的方式。</li>
+</ol>
+</blockquote>
+<h2 id="MoeCatchTheFrogs"><a href="#MoeCatchTheFrogs" class="headerlink" title="MoeCatchTheFrogs"></a><strong>MoeCatchTheFrogs</strong></h2><ul>
+<li>伪造 Cookie</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：很多新手题目会直接通过 Cookie 携带明文用户信息，或使用弱签名的 JWT，拿到后修改对应字段（比如把 <code>user=guest</code> 改为 <code>user=admin</code>）即可通关。</p>
+</blockquote>
+<h2 id="古籍翻阅"><a href="#古籍翻阅" class="headerlink" title="古籍翻阅"></a><strong>古籍翻阅</strong></h2><ul>
+<li>在给的文件里找到了一个特殊的名字：<code>true_file</code></li>
+<li>随便点开一个书籍，根据 URL 规律，写一个对应的 URL 来访问这个页面</li>
+<li>看到提示：“flag 藏在根目录下”</li>
+<li>首先尝试直接加 flag，失败</li>
+<li>后尝试跳出目录</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?file=book1.txt</code> 改为 <code>?file=../../../../flag</code> 来读取根目录下的敏感文件。</p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv56bbow000070pfeebn8yjr" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">MoeCTF 2026「熊出没」题解复盘</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">October 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/26/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
