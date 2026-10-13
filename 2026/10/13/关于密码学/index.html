@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>关于密码学 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一些密码学 - 加密算法、哈希与认证机制一、 基础密码学概念1. 分组与块大小 块大小（Block Size）：128bit &#x2F; 16字节。现代分组密码算法每次处理固定大小的数据块，数据过长时会被切分成多个块。 注意：在对称加密中，加解密必须使用同一个密钥（Key）。  2. 常见加密算法分类 对称加密：加密和解密使用同一个密钥。 **AES (Advanced Encryption S">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于密码学">
+<meta property="og:url" content="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一些密码学 - 加密算法、哈希与认证机制一、 基础密码学概念1. 分组与块大小 块大小（Block Size）：128bit &#x2F; 16字节。现代分组密码算法每次处理固定大小的数据块，数据过长时会被切分成多个块。 注意：在对称加密中，加解密必须使用同一个密钥（Key）。  2. 常见加密算法分类 对称加密：加密和解密使用同一个密钥。 **AES (Advanced Encryption S">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-13T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T16:15:33.731Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-关于密码学" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" class="article-date">
+  <time class="dt-published" datetime="2026-10-13T04:00:00.000Z" itemprop="datePublished">2026-10-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      关于密码学
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="一些密码学-加密算法、哈希与认证机制"><a href="#一些密码学-加密算法、哈希与认证机制" class="headerlink" title="一些密码学 - 加密算法、哈希与认证机制"></a>一些密码学 - 加密算法、哈希与认证机制</h1><h2 id="一、-基础密码学概念"><a href="#一、-基础密码学概念" class="headerlink" title="一、 基础密码学概念"></a>一、 基础密码学概念</h2><h3 id="1-分组与块大小"><a href="#1-分组与块大小" class="headerlink" title="1. 分组与块大小"></a>1. 分组与块大小</h3><ul>
+<li><strong>块大小（Block Size）</strong>：128bit &#x2F; 16字节。现代分组密码算法每次处理固定大小的数据块，数据过长时会被切分成多个块。</li>
+<li><strong>注意</strong>：在对称加密中，加解密必须使用<strong>同一个密钥（Key）</strong>。</li>
+</ul>
+<h3 id="2-常见加密算法分类"><a href="#2-常见加密算法分类" class="headerlink" title="2. 常见加密算法分类"></a>2. 常见加密算法分类</h3><ul>
+<li><strong>对称加密</strong>：加密和解密使用同一个密钥。<ul>
+<li>**AES (Advanced Encryption Standard)**：高级加密标准，目前最主流、最安全的对称加密算法。</li>
+<li><strong>DES (Data Encryption Standard)<strong>：数据加密标准，已被淘汰，密钥长度太短（56位），</strong>极易被暴力破解</strong>。</li>
+</ul>
+</li>
+<li><strong>非对称加密</strong>：加密和解密使用不同的密钥（公钥和私钥）。<ul>
+<li><strong>RSA</strong>：最经典的非对称加密算法。公钥加密，私钥解密（或私钥签名，公钥验签）。<strong>不要求加解密双方共享同一个密钥</strong>。</li>
+</ul>
+</li>
+</ul>
+<h2 id="二、-分组密码工作模式（Modes-of-Operation）"><a href="#二、-分组密码工作模式（Modes-of-Operation）" class="headerlink" title="二、 分组密码工作模式（Modes of Operation）"></a>二、 分组密码工作模式（Modes of Operation）</h2><p>当数据大于一个块（16字节）时，需要按照特定模式将各个块串联起来进行加密。</p>
+<h3 id="1-CBC-Cipher-Block-Chaining-密码分组链接模式"><a href="#1-CBC-Cipher-Block-Chaining-密码分组链接模式" class="headerlink" title="1. CBC (Cipher Block Chaining) 密码分组链接模式"></a>1. CBC (Cipher Block Chaining) 密码分组链接模式</h3><ul>
+<li><strong>核心流程</strong>：<ol>
+<li>将一段<strong>明文</strong>分成 3 块：P1、P2、P3。</li>
+<li>P1 与 <strong>IV</strong>（初始化向量）进行异或（XOR）运算，再进入 AES 引擎加密，生成密文块 C1。</li>
+<li>P2 与上一步产生的密文 C1 进行异或（XOR），再进入 AES 引擎加密，生成密文块 C2。</li>
+<li>以此类推，每一块的加密都依赖于前一块的密文，形成链式结构。</li>
+</ol>
+</li>
+<li><strong>优点</strong>：相同明文块加密后会得到不同的密文块，安全性高。</li>
+<li><strong>缺点</strong>：不能并行加密，且如果 IV 可控，可能引发 CBC 字节翻转攻击。</li>
+</ul>
+<h3 id="2-其他常见工作模式"><a href="#2-其他常见工作模式" class="headerlink" title="2. 其他常见工作模式"></a>2. 其他常见工作模式</h3><ul>
+<li><strong>CFB (Cipher Feedback)</strong> &#x2F; **OFB (Output Feedback)**：将块密码转换为流密码。</li>
+<li>**CTR (Counter)**：计数器模式，支持并行加密，效率高。</li>
+<li><strong>GCM (Galois&#x2F;Counter Mode)<strong>：基于 CTR 模式，同时提供加密和</strong>完整性校验（认证）</strong>，是目前最推荐的模式。</li>
+</ul>
+<h2 id="三、-哈希（散列）算法"><a href="#三、-哈希（散列）算法" class="headerlink" title="三、 哈希（散列）算法"></a>三、 哈希（散列）算法</h2><ul>
+<li><strong>概念</strong>：将任意长度的数据映射为固定长度的散列值。<strong>单向、不可逆</strong>，主要用于数据完整性校验、密码存储和数字签名。</li>
+<li><strong>MD5 (Message Digest Algorithm 5)<strong>：输出 128 位哈希值，已被证明存在严重的哈希碰撞漏洞，</strong>不再安全</strong>。</li>
+<li>**SHA-256 (Secure Hash Algorithm 256)**：输出 256 位哈希值，目前广泛使用，安全性较高。</li>
+</ul>
+<h2 id="四、-令牌与认证机制：JWT-JSON-Web-Token"><a href="#四、-令牌与认证机制：JWT-JSON-Web-Token" class="headerlink" title="四、 令牌与认证机制：JWT (JSON Web Token)"></a>四、 令牌与认证机制：JWT (JSON Web Token)</h2><h3 id="1-JWT-基础"><a href="#1-JWT-基础" class="headerlink" title="1. JWT 基础"></a>1. JWT 基础</h3><ul>
+<li><strong>特点</strong>：JWT 由 Header、Payload、Signature 三部分组成。中间用 <code>.</code> 隔开。</li>
+<li><strong>编码方式</strong>：使用 <strong>Base64URL</strong> 编码。<blockquote>
+<p>JWT 使用的是 Base64URL（对 Base64 做了 <code>+</code> 变 <code>-</code>、<code>/</code> 变 <code>_</code>、去掉 <code>=</code> 的变种），而非标准 Base64。</p>
+</blockquote>
+</li>
+<li><strong>安全性核心</strong>：JWT 的明文部分（Header 和 Payload）可以被任何人解码看到，所以<strong>绝对不能存放敏感信息</strong>。其安全性<strong>完全依赖于签名（Signature）</strong>，攻击者如果篡改了数据，签名校验就会失败。</li>
+</ul>
+<h3 id="2-签名算法（Signature-Algorithms）"><a href="#2-签名算法（Signature-Algorithms）" class="headerlink" title="2. 签名算法（Signature Algorithms）"></a>2. 签名算法（Signature Algorithms）</h3><p>JWT 签名主要有两类，原理完全不同：</p>
+<ul>
+<li>**HMAC-SHA256 (HS256)**：<ul>
+<li>属于<strong>对称加密</strong>思想。</li>
+<li>服务器和客户端<strong>共享一个 Secret</strong>（密钥）。</li>
+<li>服务端使用这个 Secret 对 Header+Payload 进行哈希计算生成签名。</li>
+<li><em>安全风险</em>：如果 Secret 泄露，攻击者可以伪造任意 JWT。</li>
+</ul>
+</li>
+<li>**RSA (RS256)**：<ul>
+<li>属于<strong>非对称加密</strong>思想。</li>
+<li>服务端持有<strong>私钥（Private Key）</strong>，用来生成签名（加密哈希值）；客户端或验证方持有<strong>公钥（Public Key）</strong>，用来验证签名。</li>
+<li><strong>不需要共享 Secret</strong>。</li>
+<li><em>安全风险</em>：如果服务端配置不当，允许 HS256 和 RS256 混淆，攻击者可以利用公钥当作 HMAC 的 Secret 进行伪造（著名的 JWT 算法混淆攻击）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="💡-安全面试常见考点提示"><a href="#💡-安全面试常见考点提示" class="headerlink" title="💡 安全面试常见考点提示"></a>💡 安全面试常见考点提示</h2><ol>
+<li><strong>JWT 的 <code>alg</code> 字段</strong>：常用来指定签名算法，如果后端没有强制校验算法，攻击者可以改成 <code>none</code> 绕过签名。</li>
+<li><strong>CBC 字节翻转</strong>：在 CBC 模式中，如果攻击者控制了 IV 和密文，修改前一块密文会影响到后一块明文的解密结果（XOR特性），常用于绕过权限验证。</li>
+<li><strong>MD5 长度扩展攻击</strong>：MD5、SHA1 等基于 Merkle–Damgård 结构的哈希函数存在长度扩展攻击风险。</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" data-id="cmv6vzlvv0000ikpfhfeggn19" data-title="关于密码学" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">关于渗透测试</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">October 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/26/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

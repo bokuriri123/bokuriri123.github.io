@@ -14,7 +14,7 @@
 <meta property="og:description" content="moectf复盘查分系统 按 F12 打开开发者工具 使用 Ctrl + U 打开源码 在源码中使用 Ctrl + F 直接搜索 moectf，直接找到了 flag   💡 Web 知识点：F12 是渗透测试的第一步，主要看 Elements（元素）、Console（控制台）和 Network（网络）。Ctrl+U 查看页面源代码往往能发现被隐藏的注释或接口。Ctrl+F 搜索敏感关键字（如 f">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-10-11T11:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-11T14:39:59.209Z">
+<meta property="article:modified_time" content="2026-10-13T15:54:16.245Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="CTF">
 <meta property="article:tag" content="Web安全">
@@ -150,10 +150,9 @@
 </blockquote>
 <h2 id="MoeCatchTheFrogs"><a href="#MoeCatchTheFrogs" class="headerlink" title="MoeCatchTheFrogs"></a><strong>MoeCatchTheFrogs</strong></h2><ul>
 <li>伪造 Cookie</li>
+<li>找到加密方式 找字典爆破 HMAC-SHA1（RFC 2104，密钥 &#x3D; <code>qwe123456</code>）</li>
+<li>得到新的cookie 获得青蛙</li>
 </ul>
-<blockquote>
-<p>💡 <strong>Web 知识点</strong>：很多新手题目会直接通过 Cookie 携带明文用户信息，或使用弱签名的 JWT，拿到后修改对应字段（比如把 <code>user=guest</code> 改为 <code>user=admin</code>）即可通关。</p>
-</blockquote>
 <h2 id="古籍翻阅"><a href="#古籍翻阅" class="headerlink" title="古籍翻阅"></a><strong>古籍翻阅</strong></h2><ul>
 <li>在给的文件里找到了一个特殊的名字：<code>true_file</code></li>
 <li>随便点开一个书籍，根据 URL 规律，写一个对应的 URL 来访问这个页面</li>
@@ -162,13 +161,13 @@
 <li>后尝试跳出目录</li>
 </ul>
 <blockquote>
-<p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?file=book1.txt</code> 改为 <code>?file=../../../../flag</code> 来读取根目录下的敏感文件。</p>
+<p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?book=book1.txt</code> 改为 <code>?book=../../../../flag</code> 来读取根目录下的敏感文件。</p>
 </blockquote>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv56bbow000070pfeebn8yjr" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv6vzlvz0001ikpf9n1l1a7z" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -179,6 +178,15 @@
   
     
 <nav id="article-nav">
+  
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          关于渗透测试
+        
+      </div>
+    </a>
   
   
     <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" id="article-nav-older" class="article-nav-link-wrap">
@@ -240,6 +248,14 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+          </li>
         
           <li>
             <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>

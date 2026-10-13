@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>关于渗透测试 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="渗透测试入门笔记 - 信息收集篇一、 基础指纹识别在拿到目标后，第一步通常是识别目标的基本架构，做到“看菜下饭”。  操作系统：判断是 Windows 还是 Linux，影响后续提权方式和 Payload 的选择。 中间件：查看 HTTP 响应头中的 Server 字段，如： Server: Apache Server: nginx&#x2F;1.18.0 后续动作：根据组件版本去查对应的 Nday（公开漏">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于渗透测试">
+<meta property="og:url" content="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="渗透测试入门笔记 - 信息收集篇一、 基础指纹识别在拿到目标后，第一步通常是识别目标的基本架构，做到“看菜下饭”。  操作系统：判断是 Windows 还是 Linux，影响后续提权方式和 Payload 的选择。 中间件：查看 HTTP 响应头中的 Server 字段，如： Server: Apache Server: nginx&#x2F;1.18.0 后续动作：根据组件版本去查对应的 Nday（公开漏">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-13T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T16:13:41.554Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-关于渗透测试" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" class="article-date">
+  <time class="dt-published" datetime="2026-10-13T04:00:00.000Z" itemprop="datePublished">2026-10-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      关于渗透测试
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="渗透测试入门笔记-信息收集篇"><a href="#渗透测试入门笔记-信息收集篇" class="headerlink" title="渗透测试入门笔记 - 信息收集篇"></a>渗透测试入门笔记 - 信息收集篇</h1><h2 id="一、-基础指纹识别"><a href="#一、-基础指纹识别" class="headerlink" title="一、 基础指纹识别"></a>一、 基础指纹识别</h2><p>在拿到目标后，第一步通常是识别目标的基本架构，做到“看菜下饭”。</p>
+<ul>
+<li><strong>操作系统</strong>：判断是 Windows 还是 Linux，影响后续提权方式和 Payload 的选择。</li>
+<li><strong>中间件</strong>：查看 HTTP 响应头中的 <code>Server</code> 字段，如：<ul>
+<li><code>Server: Apache</code></li>
+<li><code>Server: nginx/1.18.0</code></li>
+<li><em>后续动作</em>：根据组件版本去查对应的 Nday（公开漏洞）或 CVE 漏洞。</li>
+</ul>
+</li>
+<li><strong>脚本信息</strong>：判断是 PHP、Java、Python 还是 Node.js，决定后续找哪类漏洞（比如 Java 找反序列化，PHP 找文件包含）。</li>
+<li><strong>源代码</strong>：获取源码后可以进行白盒代码审计，挖掘 0day。</li>
+<li><strong>数据库信息</strong>：判断数据库类型（MySQL、MSSQL、Redis等），为后续 SQL 注入或未授权访问做准备。</li>
+</ul>
+<h2 id="二、-域名信息收集"><a href="#二、-域名信息收集" class="headerlink" title="二、 域名信息收集"></a>二、 域名信息收集</h2><p>这是信息收集的重中之重，用于资产测绘和扩大攻击面。</p>
+<h3 id="1-Whois-查询"><a href="#1-Whois-查询" class="headerlink" title="1. Whois 查询"></a>1. Whois 查询</h3><ul>
+<li><strong>内容</strong>：域名注册人、邮箱、注册时间、过期时间。</li>
+<li><strong>作用</strong>：用于社工钓鱼，或寻找注册时间久远但疏于维护的老资产。</li>
+<li><strong>常用工具</strong>：<code>whois</code> 命令、站长工具。</li>
+</ul>
+<h3 id="2-DNS-记录"><a href="#2-DNS-记录" class="headerlink" title="2. DNS 记录"></a>2. DNS 记录</h3><ul>
+<li><strong>A记录</strong>：域名对应的 IP 地址。</li>
+<li><strong>CNAME记录</strong>：别名记录，常用于 CDN 识别。</li>
+<li><strong>作用</strong>：了解目标的网络拓扑，定位真实服务器。</li>
+</ul>
+<h3 id="3-子域名收集"><a href="#3-子域名收集" class="headerlink" title="3. 子域名收集"></a>3. 子域名收集</h3><ul>
+<li><strong>手段</strong>：证书透明日志（Certificate Transparency）、字典爆破工具。</li>
+<li><strong>常用工具</strong>：<code>OneForAll</code>、<code>subfinder</code>、<code>Layer</code> 等。</li>
+<li><strong>意义</strong>：主站防御严密，边缘子域名往往是突破口（比如 <code>test.xxx.com</code> 或 <code>dev.xxx.com</code>）。</li>
+</ul>
+<h3 id="4-真实-IP（绕过-CDN）"><a href="#4-真实-IP（绕过-CDN）" class="headerlink" title="4. 真实 IP（绕过 CDN）"></a>4. 真实 IP（绕过 CDN）</h3><ul>
+<li><strong>CDN（内容分发网络）</strong>的作用：加速访问、保护&#x2F;隐藏真实 IP。</li>
+<li><strong>绕过手段</strong>：<ul>
+<li>查看历史 DNS 记录（如 <code>SecurityTrails</code>、<code>DNSdb</code>）。</li>
+<li>全球 Ping 测试，寻找未使用 CDN 的节点。</li>
+<li>通过 SSL 证书比对。</li>
+<li>通过邮件服务器（发信源 IP 大概率是真实 IP）。</li>
+<li>敏感信息泄露（如 phpinfo、探针文件）。</li>
+</ul>
+</li>
+<li><strong>实战意义</strong>：如果目标套了 CDN，你直接打域名只是在打 CDN 节点，完全无效。必须找到真实 IP 才能发起实质攻击。</li>
+</ul>
+<h3 id="5-旁站查询"><a href="#5-旁站查询" class="headerlink" title="5. 旁站查询"></a>5. 旁站查询</h3><ul>
+<li><strong>概念</strong>：同 IP 下的其他网站（即“旁站”）。</li>
+<li><strong>思路</strong>：如果主站打不进，可以寻找同服务器上防御薄弱的小网站下手，通过拿下旁站，利用服务器内部权限进行横向移动，最终拿下主站。</li>
+</ul>
+<h2 id="三、-目录收集"><a href="#三、-目录收集" class="headerlink" title="三、 目录收集"></a>三、 目录收集</h2><p>寻找敏感文件泄露，这是最容易出成果的一步。</p>
+<h3 id="1-网站主动暴露"><a href="#1-网站主动暴露" class="headerlink" title="1. 网站主动暴露"></a>1. 网站主动暴露</h3><ul>
+<li><code>robots.txt</code>：爬虫协议，常暴露后台路径或隐藏接口。</li>
+<li><code>sitemap.xml</code>：网站地图，了解站点结构。</li>
+</ul>
+<h3 id="2-敏感文件泄露"><a href="#2-敏感文件泄露" class="headerlink" title="2. 敏感文件泄露"></a>2. 敏感文件泄露</h3><ul>
+<li><strong>备份文件</strong>：<code>www.zip</code>、<code>web.tar</code>、<code>www.rar</code> 等。<ul>
+<li><em>致命点</em>：开发人员安全意识差，将源码打包上传到 Web 根目录，下载后直接白盒审计。</li>
+</ul>
+</li>
+<li><strong>版本控制泄露</strong>：<code>.git/</code>、<code>.svn/</code> 目录。<ul>
+<li><em>常用工具</em>：<code>GitHack</code>、<code>dvcs-ripper</code>，直接还原源码。</li>
+</ul>
+</li>
+<li><strong>配置文件</strong>：<code>.env</code>、<code>config.php</code>、<code>web.config</code> 等。<ul>
+<li><em>致命点</em>：直接泄露数据库账密、云服务 AK&#x2F;SK，导致服务器沦陷。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-目录爆破（依赖字典爆破）"><a href="#3-目录爆破（依赖字典爆破）" class="headerlink" title="3. 目录爆破（依赖字典爆破）"></a>3. 目录爆破（依赖字典爆破）</h3><ul>
+<li><strong>原理</strong>：利用常见目录&#x2F;文件名字典，去猜测网站隐藏路径。</li>
+<li><strong>常用工具</strong>：<code>dirsearch</code>、<code>gobuster</code>、<code>feroxbuster</code>。</li>
+<li><strong>核心</strong>：字典的质量决定了爆破的成功率。</li>
+</ul>
+<hr>
+<h2 id="🛠️-渗透信息收集常用工具箱"><a href="#🛠️-渗透信息收集常用工具箱" class="headerlink" title="🛠️ 渗透信息收集常用工具箱"></a>🛠️ 渗透信息收集常用工具箱</h2><ul>
+<li><strong>网络空间测绘</strong>：Fofa、Shodan、Quake、Hunter</li>
+<li><strong>指纹识别</strong>：Wappalyzer（浏览器插件）、whatweb（命令行）</li>
+<li><strong>端口扫描</strong>：Nmap、Masscan</li>
+<li><strong>子域名&#x2F;目录扫描</strong>：OneForAll、dirsearch、gobuster</li>
+<li><strong>抓包&#x2F;改包</strong>：Burp Suite、Yakit</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" data-id="cmv6vzlw60005ikpf8gc88myo" data-title="关于渗透测试" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          关于密码学
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">moectf复盘</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">October 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/09/26/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

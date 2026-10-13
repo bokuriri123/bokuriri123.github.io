@@ -71,6 +71,227 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-关于密码学" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" class="article-date">
+  <time class="dt-published" datetime="2026-10-13T04:00:00.000Z" itemprop="datePublished">2026-10-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="一些密码学-加密算法、哈希与认证机制"><a href="#一些密码学-加密算法、哈希与认证机制" class="headerlink" title="一些密码学 - 加密算法、哈希与认证机制"></a>一些密码学 - 加密算法、哈希与认证机制</h1><h2 id="一、-基础密码学概念"><a href="#一、-基础密码学概念" class="headerlink" title="一、 基础密码学概念"></a>一、 基础密码学概念</h2><h3 id="1-分组与块大小"><a href="#1-分组与块大小" class="headerlink" title="1. 分组与块大小"></a>1. 分组与块大小</h3><ul>
+<li><strong>块大小（Block Size）</strong>：128bit &#x2F; 16字节。现代分组密码算法每次处理固定大小的数据块，数据过长时会被切分成多个块。</li>
+<li><strong>注意</strong>：在对称加密中，加解密必须使用<strong>同一个密钥（Key）</strong>。</li>
+</ul>
+<h3 id="2-常见加密算法分类"><a href="#2-常见加密算法分类" class="headerlink" title="2. 常见加密算法分类"></a>2. 常见加密算法分类</h3><ul>
+<li><strong>对称加密</strong>：加密和解密使用同一个密钥。<ul>
+<li>**AES (Advanced Encryption Standard)**：高级加密标准，目前最主流、最安全的对称加密算法。</li>
+<li><strong>DES (Data Encryption Standard)<strong>：数据加密标准，已被淘汰，密钥长度太短（56位），</strong>极易被暴力破解</strong>。</li>
+</ul>
+</li>
+<li><strong>非对称加密</strong>：加密和解密使用不同的密钥（公钥和私钥）。<ul>
+<li><strong>RSA</strong>：最经典的非对称加密算法。公钥加密，私钥解密（或私钥签名，公钥验签）。<strong>不要求加解密双方共享同一个密钥</strong>。</li>
+</ul>
+</li>
+</ul>
+<h2 id="二、-分组密码工作模式（Modes-of-Operation）"><a href="#二、-分组密码工作模式（Modes-of-Operation）" class="headerlink" title="二、 分组密码工作模式（Modes of Operation）"></a>二、 分组密码工作模式（Modes of Operation）</h2><p>当数据大于一个块（16字节）时，需要按照特定模式将各个块串联起来进行加密。</p>
+<h3 id="1-CBC-Cipher-Block-Chaining-密码分组链接模式"><a href="#1-CBC-Cipher-Block-Chaining-密码分组链接模式" class="headerlink" title="1. CBC (Cipher Block Chaining) 密码分组链接模式"></a>1. CBC (Cipher Block Chaining) 密码分组链接模式</h3><ul>
+<li><strong>核心流程</strong>：<ol>
+<li>将一段<strong>明文</strong>分成 3 块：P1、P2、P3。</li>
+<li>P1 与 <strong>IV</strong>（初始化向量）进行异或（XOR）运算，再进入 AES 引擎加密，生成密文块 C1。</li>
+<li>P2 与上一步产生的密文 C1 进行异或（XOR），再进入 AES 引擎加密，生成密文块 C2。</li>
+<li>以此类推，每一块的加密都依赖于前一块的密文，形成链式结构。</li>
+</ol>
+</li>
+<li><strong>优点</strong>：相同明文块加密后会得到不同的密文块，安全性高。</li>
+<li><strong>缺点</strong>：不能并行加密，且如果 IV 可控，可能引发 CBC 字节翻转攻击。</li>
+</ul>
+<h3 id="2-其他常见工作模式"><a href="#2-其他常见工作模式" class="headerlink" title="2. 其他常见工作模式"></a>2. 其他常见工作模式</h3><ul>
+<li><strong>CFB (Cipher Feedback)</strong> &#x2F; **OFB (Output Feedback)**：将块密码转换为流密码。</li>
+<li>**CTR (Counter)**：计数器模式，支持并行加密，效率高。</li>
+<li><strong>GCM (Galois&#x2F;Counter Mode)<strong>：基于 CTR 模式，同时提供加密和</strong>完整性校验（认证）</strong>，是目前最推荐的模式。</li>
+</ul>
+<h2 id="三、-哈希（散列）算法"><a href="#三、-哈希（散列）算法" class="headerlink" title="三、 哈希（散列）算法"></a>三、 哈希（散列）算法</h2><ul>
+<li><strong>概念</strong>：将任意长度的数据映射为固定长度的散列值。<strong>单向、不可逆</strong>，主要用于数据完整性校验、密码存储和数字签名。</li>
+<li><strong>MD5 (Message Digest Algorithm 5)<strong>：输出 128 位哈希值，已被证明存在严重的哈希碰撞漏洞，</strong>不再安全</strong>。</li>
+<li>**SHA-256 (Secure Hash Algorithm 256)**：输出 256 位哈希值，目前广泛使用，安全性较高。</li>
+</ul>
+<h2 id="四、-令牌与认证机制：JWT-JSON-Web-Token"><a href="#四、-令牌与认证机制：JWT-JSON-Web-Token" class="headerlink" title="四、 令牌与认证机制：JWT (JSON Web Token)"></a>四、 令牌与认证机制：JWT (JSON Web Token)</h2><h3 id="1-JWT-基础"><a href="#1-JWT-基础" class="headerlink" title="1. JWT 基础"></a>1. JWT 基础</h3><ul>
+<li><strong>特点</strong>：JWT 由 Header、Payload、Signature 三部分组成。中间用 <code>.</code> 隔开。</li>
+<li><strong>编码方式</strong>：使用 <strong>Base64URL</strong> 编码。<blockquote>
+<p>JWT 使用的是 Base64URL（对 Base64 做了 <code>+</code> 变 <code>-</code>、<code>/</code> 变 <code>_</code>、去掉 <code>=</code> 的变种），而非标准 Base64。</p>
+</blockquote>
+</li>
+<li><strong>安全性核心</strong>：JWT 的明文部分（Header 和 Payload）可以被任何人解码看到，所以<strong>绝对不能存放敏感信息</strong>。其安全性<strong>完全依赖于签名（Signature）</strong>，攻击者如果篡改了数据，签名校验就会失败。</li>
+</ul>
+<h3 id="2-签名算法（Signature-Algorithms）"><a href="#2-签名算法（Signature-Algorithms）" class="headerlink" title="2. 签名算法（Signature Algorithms）"></a>2. 签名算法（Signature Algorithms）</h3><p>JWT 签名主要有两类，原理完全不同：</p>
+<ul>
+<li>**HMAC-SHA256 (HS256)**：<ul>
+<li>属于<strong>对称加密</strong>思想。</li>
+<li>服务器和客户端<strong>共享一个 Secret</strong>（密钥）。</li>
+<li>服务端使用这个 Secret 对 Header+Payload 进行哈希计算生成签名。</li>
+<li><em>安全风险</em>：如果 Secret 泄露，攻击者可以伪造任意 JWT。</li>
+</ul>
+</li>
+<li>**RSA (RS256)**：<ul>
+<li>属于<strong>非对称加密</strong>思想。</li>
+<li>服务端持有<strong>私钥（Private Key）</strong>，用来生成签名（加密哈希值）；客户端或验证方持有<strong>公钥（Public Key）</strong>，用来验证签名。</li>
+<li><strong>不需要共享 Secret</strong>。</li>
+<li><em>安全风险</em>：如果服务端配置不当，允许 HS256 和 RS256 混淆，攻击者可以利用公钥当作 HMAC 的 Secret 进行伪造（著名的 JWT 算法混淆攻击）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="💡-安全面试常见考点提示"><a href="#💡-安全面试常见考点提示" class="headerlink" title="💡 安全面试常见考点提示"></a>💡 安全面试常见考点提示</h2><ol>
+<li><strong>JWT 的 <code>alg</code> 字段</strong>：常用来指定签名算法，如果后端没有强制校验算法，攻击者可以改成 <code>none</code> 绕过签名。</li>
+<li><strong>CBC 字节翻转</strong>：在 CBC 模式中，如果攻击者控制了 IV 和密文，修改前一块密文会影响到后一块明文的解密结果（XOR特性），常用于绕过权限验证。</li>
+<li><strong>MD5 长度扩展攻击</strong>：MD5、SHA1 等基于 Merkle–Damgård 结构的哈希函数存在长度扩展攻击风险。</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" data-id="cmv6vzlvv0000ikpfhfeggn19" data-title="关于密码学" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-关于渗透测试" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" class="article-date">
+  <time class="dt-published" datetime="2026-10-13T04:00:00.000Z" itemprop="datePublished">2026-10-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="渗透测试入门笔记-信息收集篇"><a href="#渗透测试入门笔记-信息收集篇" class="headerlink" title="渗透测试入门笔记 - 信息收集篇"></a>渗透测试入门笔记 - 信息收集篇</h1><h2 id="一、-基础指纹识别"><a href="#一、-基础指纹识别" class="headerlink" title="一、 基础指纹识别"></a>一、 基础指纹识别</h2><p>在拿到目标后，第一步通常是识别目标的基本架构，做到“看菜下饭”。</p>
+<ul>
+<li><strong>操作系统</strong>：判断是 Windows 还是 Linux，影响后续提权方式和 Payload 的选择。</li>
+<li><strong>中间件</strong>：查看 HTTP 响应头中的 <code>Server</code> 字段，如：<ul>
+<li><code>Server: Apache</code></li>
+<li><code>Server: nginx/1.18.0</code></li>
+<li><em>后续动作</em>：根据组件版本去查对应的 Nday（公开漏洞）或 CVE 漏洞。</li>
+</ul>
+</li>
+<li><strong>脚本信息</strong>：判断是 PHP、Java、Python 还是 Node.js，决定后续找哪类漏洞（比如 Java 找反序列化，PHP 找文件包含）。</li>
+<li><strong>源代码</strong>：获取源码后可以进行白盒代码审计，挖掘 0day。</li>
+<li><strong>数据库信息</strong>：判断数据库类型（MySQL、MSSQL、Redis等），为后续 SQL 注入或未授权访问做准备。</li>
+</ul>
+<h2 id="二、-域名信息收集"><a href="#二、-域名信息收集" class="headerlink" title="二、 域名信息收集"></a>二、 域名信息收集</h2><p>这是信息收集的重中之重，用于资产测绘和扩大攻击面。</p>
+<h3 id="1-Whois-查询"><a href="#1-Whois-查询" class="headerlink" title="1. Whois 查询"></a>1. Whois 查询</h3><ul>
+<li><strong>内容</strong>：域名注册人、邮箱、注册时间、过期时间。</li>
+<li><strong>作用</strong>：用于社工钓鱼，或寻找注册时间久远但疏于维护的老资产。</li>
+<li><strong>常用工具</strong>：<code>whois</code> 命令、站长工具。</li>
+</ul>
+<h3 id="2-DNS-记录"><a href="#2-DNS-记录" class="headerlink" title="2. DNS 记录"></a>2. DNS 记录</h3><ul>
+<li><strong>A记录</strong>：域名对应的 IP 地址。</li>
+<li><strong>CNAME记录</strong>：别名记录，常用于 CDN 识别。</li>
+<li><strong>作用</strong>：了解目标的网络拓扑，定位真实服务器。</li>
+</ul>
+<h3 id="3-子域名收集"><a href="#3-子域名收集" class="headerlink" title="3. 子域名收集"></a>3. 子域名收集</h3><ul>
+<li><strong>手段</strong>：证书透明日志（Certificate Transparency）、字典爆破工具。</li>
+<li><strong>常用工具</strong>：<code>OneForAll</code>、<code>subfinder</code>、<code>Layer</code> 等。</li>
+<li><strong>意义</strong>：主站防御严密，边缘子域名往往是突破口（比如 <code>test.xxx.com</code> 或 <code>dev.xxx.com</code>）。</li>
+</ul>
+<h3 id="4-真实-IP（绕过-CDN）"><a href="#4-真实-IP（绕过-CDN）" class="headerlink" title="4. 真实 IP（绕过 CDN）"></a>4. 真实 IP（绕过 CDN）</h3><ul>
+<li><strong>CDN（内容分发网络）</strong>的作用：加速访问、保护&#x2F;隐藏真实 IP。</li>
+<li><strong>绕过手段</strong>：<ul>
+<li>查看历史 DNS 记录（如 <code>SecurityTrails</code>、<code>DNSdb</code>）。</li>
+<li>全球 Ping 测试，寻找未使用 CDN 的节点。</li>
+<li>通过 SSL 证书比对。</li>
+<li>通过邮件服务器（发信源 IP 大概率是真实 IP）。</li>
+<li>敏感信息泄露（如 phpinfo、探针文件）。</li>
+</ul>
+</li>
+<li><strong>实战意义</strong>：如果目标套了 CDN，你直接打域名只是在打 CDN 节点，完全无效。必须找到真实 IP 才能发起实质攻击。</li>
+</ul>
+<h3 id="5-旁站查询"><a href="#5-旁站查询" class="headerlink" title="5. 旁站查询"></a>5. 旁站查询</h3><ul>
+<li><strong>概念</strong>：同 IP 下的其他网站（即“旁站”）。</li>
+<li><strong>思路</strong>：如果主站打不进，可以寻找同服务器上防御薄弱的小网站下手，通过拿下旁站，利用服务器内部权限进行横向移动，最终拿下主站。</li>
+</ul>
+<h2 id="三、-目录收集"><a href="#三、-目录收集" class="headerlink" title="三、 目录收集"></a>三、 目录收集</h2><p>寻找敏感文件泄露，这是最容易出成果的一步。</p>
+<h3 id="1-网站主动暴露"><a href="#1-网站主动暴露" class="headerlink" title="1. 网站主动暴露"></a>1. 网站主动暴露</h3><ul>
+<li><code>robots.txt</code>：爬虫协议，常暴露后台路径或隐藏接口。</li>
+<li><code>sitemap.xml</code>：网站地图，了解站点结构。</li>
+</ul>
+<h3 id="2-敏感文件泄露"><a href="#2-敏感文件泄露" class="headerlink" title="2. 敏感文件泄露"></a>2. 敏感文件泄露</h3><ul>
+<li><strong>备份文件</strong>：<code>www.zip</code>、<code>web.tar</code>、<code>www.rar</code> 等。<ul>
+<li><em>致命点</em>：开发人员安全意识差，将源码打包上传到 Web 根目录，下载后直接白盒审计。</li>
+</ul>
+</li>
+<li><strong>版本控制泄露</strong>：<code>.git/</code>、<code>.svn/</code> 目录。<ul>
+<li><em>常用工具</em>：<code>GitHack</code>、<code>dvcs-ripper</code>，直接还原源码。</li>
+</ul>
+</li>
+<li><strong>配置文件</strong>：<code>.env</code>、<code>config.php</code>、<code>web.config</code> 等。<ul>
+<li><em>致命点</em>：直接泄露数据库账密、云服务 AK&#x2F;SK，导致服务器沦陷。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-目录爆破（依赖字典爆破）"><a href="#3-目录爆破（依赖字典爆破）" class="headerlink" title="3. 目录爆破（依赖字典爆破）"></a>3. 目录爆破（依赖字典爆破）</h3><ul>
+<li><strong>原理</strong>：利用常见目录&#x2F;文件名字典，去猜测网站隐藏路径。</li>
+<li><strong>常用工具</strong>：<code>dirsearch</code>、<code>gobuster</code>、<code>feroxbuster</code>。</li>
+<li><strong>核心</strong>：字典的质量决定了爆破的成功率。</li>
+</ul>
+<hr>
+<h2 id="🛠️-渗透信息收集常用工具箱"><a href="#🛠️-渗透信息收集常用工具箱" class="headerlink" title="🛠️ 渗透信息收集常用工具箱"></a>🛠️ 渗透信息收集常用工具箱</h2><ul>
+<li><strong>网络空间测绘</strong>：Fofa、Shodan、Quake、Hunter</li>
+<li><strong>指纹识别</strong>：Wappalyzer（浏览器插件）、whatweb（命令行）</li>
+<li><strong>端口扫描</strong>：Nmap、Masscan</li>
+<li><strong>子域名&#x2F;目录扫描</strong>：OneForAll、dirsearch、gobuster</li>
+<li><strong>抓包&#x2F;改包</strong>：Burp Suite、Yakit</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" data-id="cmv6vzlw60005ikpf8gc88myo" data-title="关于渗透测试" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-moectf复盘" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" class="article-date">
@@ -145,10 +366,9 @@
 </blockquote>
 <h2 id="MoeCatchTheFrogs"><a href="#MoeCatchTheFrogs" class="headerlink" title="MoeCatchTheFrogs"></a><strong>MoeCatchTheFrogs</strong></h2><ul>
 <li>伪造 Cookie</li>
+<li>找到加密方式 找字典爆破 HMAC-SHA1（RFC 2104，密钥 &#x3D; <code>qwe123456</code>）</li>
+<li>得到新的cookie 获得青蛙</li>
 </ul>
-<blockquote>
-<p>💡 <strong>Web 知识点</strong>：很多新手题目会直接通过 Cookie 携带明文用户信息，或使用弱签名的 JWT，拿到后修改对应字段（比如把 <code>user=guest</code> 改为 <code>user=admin</code>）即可通关。</p>
-</blockquote>
 <h2 id="古籍翻阅"><a href="#古籍翻阅" class="headerlink" title="古籍翻阅"></a><strong>古籍翻阅</strong></h2><ul>
 <li>在给的文件里找到了一个特殊的名字：<code>true_file</code></li>
 <li>随便点开一个书籍，根据 URL 规律，写一个对应的 URL 来访问这个页面</li>
@@ -157,13 +377,13 @@
 <li>后尝试跳出目录</li>
 </ul>
 <blockquote>
-<p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?file=book1.txt</code> 改为 <code>?file=../../../../flag</code> 来读取根目录下的敏感文件。</p>
+<p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?book=book1.txt</code> 改为 <code>?book=../../../../flag</code> 来读取根目录下的敏感文件。</p>
 </blockquote>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv56bbow000070pfeebn8yjr" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv6vzlvz0001ikpf9n1l1a7z" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -264,7 +484,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cmv56bbox000170pf75u4c7wd" data-title="MoeCTF 2026「熊出没」题解复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cmv6vzlw10002ikpf69c977ht" data-title="MoeCTF 2026「熊出没」题解复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -317,7 +537,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/09/26/hello-world/" data-id="cmv56bboz000470pff2s650am" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/09/26/hello-world/" data-id="cmv6vzlwf000kikpffq4g7bbk" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -379,6 +599,14 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+          </li>
         
           <li>
             <a href="/2026/10/11/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
